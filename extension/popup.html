@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CyberGuard AI</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <div class="header">
+      <h1><span class="shield-icon">\uD83D\uDEE1\uFE0F</span>CyberGuard AI</h1>
+    </div>
+    <div class="session-stats" id="session-stats">
+      <div class="stat">
+        <span class="stat-value" id="urls-scanned">0</span>
+        <span class="stat-label">URLs Scanned</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="threats-found">0</span>
+        <span class="stat-label">Threats Found</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="session-status">Active</span>
+        <span class="stat-label">Status</span>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="page">Page</button>
+      <button class="tab-btn" data-tab="links">Links</button>
+    </div>
+    <div class="tab-content" id="tab-panel">
+      <div class="tab-pane active" id="page-tab">
+        <p id="page-status">Scanning page...</p>
+      </div>
+      <div class="tab-pane" id="links-tab">
+        <div id="link-list" class="link-list">
+          <p class="empty-state">No links scanned yet.</p>
+        </div>
+      </div>
+    </div>
+    <button id="open-dashboard" class="dashboard-btn">Open Dashboard &rarr;</button>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

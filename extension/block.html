@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CyberGuard — Site Blocked</title>
+  <link rel="stylesheet" href="block.css">
+</head>
+<body>
+  <div class="block-page">
+    <div class="shield"><span class="icon">\uD83D\uDEE1\uFE0F</span></div>
+    <h1>DANGER — This site may steal your information</h1>
+    <p class="subtitle">CyberGuard AI has detected potential phishing or malicious activity on this website.</p>
+
+    <div class="risk-details" id="risk-details">
+      <div class="score-display">
+        <span class="score-label">Risk Score</span>
+        <span class="score-value" id="risk-score">--</span>
+      </div>
+      <div class="reasons" id="risk-reasons"></div>
+    </div>
+
+    <div class="blocked-url" id="blocked-url"></div>
+
+    <div class="actions">
+      <button id="go-back" class="btn btn-secondary">Go Back to Safety</button>
+      <button id="proceed" class="btn btn-danger">I Understand the Risks</button>
+    </div>
+    <div class="countdown" id="countdown"></div>
+  </div>
+  <script src="block.js"></script>
+</body>
+</html>

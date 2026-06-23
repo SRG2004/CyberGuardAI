@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Environment
+.env
+!.env.example
+!.env.production
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+
+# ML artifacts (large files)
+ml-service/models/*.pkl
+ml-service/data/*.csv
+ml-service/data/*.bz2
+ml-service/data/.cache/
+
+# Logs
+logs/
+*.log
+
+# Uploads
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Misc
+.agents/
+.claude/
+.antigravityignore

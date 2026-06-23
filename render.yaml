@@ -1,0 +1,55 @@
+# Render.com Blueprint — Infrastructure as Code
+# Deploy: Connect GitHub repo → Render will auto-detect this file
+# Docs: https://docs.render.com/blueprint-spec
+
+services:
+  # ─── Backend API ────────────────────────────────────
+  - type: web
+    name: cyberguard-api
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: npm ci --omit=dev
+    startCommand: node src/server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "5000"
+      - key: MONGODB_URI
+        sync: false  # Set manually in Render dashboard
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: ACCESS_TOKEN_EXPIRY
+        value: "15m"
+      - key: REFRESH_TOKEN_EXPIRY
+        value: "7d"
+      - key: ML_SERVICE_URL
+        fromService:
+          name: cyberguard-ml
+          type: web
+          property: host
+      - key: FRONTEND_URL
+        sync: false  # Set to your Vercel URL after deploying frontend
+      - key: EXTENSION_API_SECRET
+        generateValue: true
+
+  # ─── ML Service ─────────────────────────────────────
+  - type: web
+    name: cyberguard-ml
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: ml-service
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "8001"
+      - key: PYTHONUNBUFFERED
+        value: "1"
