@@ -1,7 +1,7 @@
 /* global chrome */
 /* MV3 Service Worker — no blocking webRequest, no persistent state across restarts */
 
-const DEFAULT_API = 'http://localhost:5000';
+const DEFAULT_API = 'https://cyberguardai-naip.onrender.com';
 let sessionId = null;
 let localBlocklist = new Set();
 let urlCache = {};
