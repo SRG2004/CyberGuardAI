@@ -15,8 +15,7 @@ dist/
 build/
 *.egg-info/
 
-# ML artifacts (large files)
-ml-service/models/*.pkl
+# ML artifacts (large data files only — models ARE committed)
 ml-service/data/*.csv
 ml-service/data/*.bz2
 ml-service/data/.cache/
