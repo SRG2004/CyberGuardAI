@@ -16,5 +16,4 @@ export const requireRole = (...roles) => (req, res, next) => {
 
 // Convenience middleware
 export const isAdmin = requireRole('admin');
-export const isModerator = requireRole('moderator', 'admin');
 export const isStudent = requireRole('student');

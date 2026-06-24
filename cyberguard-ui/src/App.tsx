@@ -16,7 +16,6 @@ const ScanHistory = lazy(() => import("./pages/ScanHistory"));
 const AnonymousReport = lazy(() => import("./pages/AnonymousReport"));
 const ExtensionManager = lazy(() => import("./pages/ExtensionManager"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
-const ModeratorPanel = lazy(() => import("./pages/ModeratorPanel"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const Profile = lazy(() => import("./pages/Profile"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -89,10 +88,6 @@ const App = () => {
                   <Route path="/profile" element={<Profile />} />
                 </Route>
 
-                {/* Moderator+ routes */}
-                <Route element={<ProtectedRoute role="moderator" />}>
-                  <Route path="/moderator" element={<ModeratorPanel />} />
-                </Route>
 
                 {/* Admin-only routes */}
                 <Route element={<ProtectedRoute role="admin" />}>

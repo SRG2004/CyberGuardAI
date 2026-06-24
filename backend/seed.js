@@ -6,19 +6,18 @@ dotenv.config();
 
 const users = [
   { email: 'admin@cyberguard.com', password: 'Admin@123', displayName: 'Admin User', role: 'admin' },
-  { email: 'moderator@cyberguard.com', password: 'Moderator@123', displayName: 'Moderator User', role: 'moderator' },
   { email: 'student@cyberguard.com', password: 'Student@123', displayName: 'Student User', role: 'student' },
 ];
 
 async function seed() {
-  const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/cyberguard';
+  const uri = 'mongodb+srv://sarthakgosavi77_db_user:TV9LhobsPbkvSXEJ@cluster0.03kgp84.mongodb.net/cyberguard';
   console.log(`Connecting to ${uri}...`);
   await mongoose.connect(uri);
 
   const UserSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true, lowercase: true },
     passwordHash: { type: String, required: true },
-    role: { type: String, enum: ['student', 'moderator', 'admin'], default: 'student' },
+    role: { type: String, enum: ['student', 'admin'], default: 'student' },
     displayName: { type: String, required: true },
     isActive: { type: Boolean, default: true },
     lastActive: { type: Date, default: new Date() },

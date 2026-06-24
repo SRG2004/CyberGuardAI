@@ -61,7 +61,11 @@ export default function Dashboard() {
 
   const handleScan = () => {
     if (!quickUrl.trim()) return;
-    scanMutation.mutate({ url: quickUrl.trim() });
+    let finalUrl = quickUrl.trim();
+    if (!/^https?:\/\//i.test(finalUrl)) {
+      finalUrl = 'http://' + finalUrl;
+    }
+    scanMutation.mutate({ url: finalUrl });
     setQuickUrl('');
   };
 

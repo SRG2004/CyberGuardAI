@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { isModerator } from '../middleware/roles.js';
+import { isAdmin } from '../middleware/roles.js';
 import { authenticate } from '../middleware/auth.js';
 import { reportValidation, paginationValidation } from '../middleware/validate.js';
 import { reportRateLimit } from '../middleware/rateLimit.js';
@@ -62,7 +62,7 @@ router.get('/track/:anonymousId', async (req, res) => {
   res.json({ success: true, data: report });
 });
 
-router.get('/', authenticate, isModerator, paginationValidation, async (req, res) => {
+router.get('/', authenticate, isAdmin, paginationValidation, async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 20;
   const skip = (page - 1) * limit;
@@ -75,7 +75,7 @@ router.get('/', authenticate, isModerator, paginationValidation, async (req, res
   res.json({ success: true, data: reports, meta: { page, total, limit } });
 });
 
-router.get('/:reportId', authenticate, isModerator, async (req, res) => {
+router.get('/:reportId', authenticate, isAdmin, async (req, res) => {
   const report = await Report.findById(req.params.reportId).lean();
   if (!report) {
     return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Report not found.' } });
@@ -83,7 +83,7 @@ router.get('/:reportId', authenticate, isModerator, async (req, res) => {
   res.json({ success: true, data: report });
 });
 
-router.patch('/:reportId/status', authenticate, isModerator, async (req, res) => {
+router.patch('/:reportId/status', authenticate, isAdmin, async (req, res) => {
   const { status, notes } = req.body;
   if (!status || !['pending', 'under_review', 'confirmed', 'dismissed'].includes(status)) {
     return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid status.' } });

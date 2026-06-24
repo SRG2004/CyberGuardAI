@@ -21,7 +21,11 @@
         const blockPage = chrome.runtime.getURL(`block.html?url=${encodeURIComponent(href.href)}&score=${result.riskScore}`);
         window.location.href = blockPage;
       }
-    } catch (err) {}
+    } catch (e) {
+      if (e.message && e.message.includes('context invalidated')) {
+        // Handle extension reload
+      }
+    }
   }, true); // capture: true = fires before target handlers
 
   // ─── Extract all external links ────────────────────────────
@@ -278,8 +282,9 @@
 
   // ─── Trigger scan via background ──────────────────────────
   function triggerScan() {
-    const pageUrl = window.location.href;
-    if (pageUrl.startsWith('chrome://') || pageUrl.startsWith('chrome-extension://') || pageUrl.startsWith(chrome.runtime.getURL(''))) return;
+    try {
+      const pageUrl = window.location.href;
+      if (pageUrl.startsWith('chrome://') || pageUrl.startsWith('chrome-extension://') || pageUrl.startsWith(chrome.runtime.getURL(''))) return;
 
     const links = extractLinks().filter(l => !l.startsWith('chrome://') && !l.startsWith('chrome-extension://'));
     const emailText = extractEmailContent();

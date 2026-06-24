@@ -16,7 +16,11 @@ export default function LinkScanner() {
   const handleScan = async () => {
     if (!url || scan.isPending) return;
     try {
-      await scan.mutateAsync({ url });
+      let finalUrl = url.trim();
+      if (!/^https?:\/\//i.test(finalUrl)) {
+        finalUrl = 'http://' + finalUrl;
+      }
+      await scan.mutateAsync({ url: finalUrl });
       toast.success('Scan complete');
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Scan failed');
