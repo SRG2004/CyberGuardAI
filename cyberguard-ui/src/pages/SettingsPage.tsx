@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Settings as SettingsIcon, Bell, Shield, Eye } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
+import { toast } from 'sonner';
 
 const defaultSettings = {
   notificationEmail: true,
@@ -31,7 +32,13 @@ export default function SettingsPage() {
     localStorage.setItem(`cyberguard-settings-${userRole || 'student'}`, JSON.stringify(settings));
   }, [settings, userRole]);
 
-  const toggle = (key: string) => setSettings((prev: Record<string, boolean>) => ({ ...prev, [key]: !prev[key] }));
+  const toggle = (key: string) => {
+    setSettings((prev: Record<string, boolean>) => {
+      const newVal = !prev[key];
+      toast.success(`Setting updated`);
+      return { ...prev, [key]: newVal };
+    });
+  };
 
   const groups = [
     {
@@ -101,6 +108,7 @@ export default function SettingsPage() {
           onClick={() => {
             setSettings(defaultSettings);
             localStorage.removeItem(`cyberguard-settings-${userRole || 'student'}`);
+            toast.success('All settings reset to defaults');
           }}
           className="text-xs text-muted-foreground hover:text-foreground transition-colors"
         >

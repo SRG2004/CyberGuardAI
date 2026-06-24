@@ -1,6 +1,8 @@
 import { Bell, Search, Shield } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 const pageTitles: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -26,7 +28,28 @@ const placeholders = [
 export function Topbar() {
   const location = useLocation();
   const userRole = useAuthStore((s) => s.user?.role);
+  const [hasUnread, setHasUnread] = useState(true);
   const title = pageTitles[location.pathname] || 'CyberGuard AI';
+
+  const handleNotifications = () => {
+    if (hasUnread) {
+      toast('You have 2 new security alerts', {
+        description: 'New high-risk threat detected in Global Feed.',
+      });
+      setHasUnread(false);
+    } else {
+      toast('No new notifications');
+    }
+  };
+
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const query = (e.target as HTMLInputElement).value;
+      if (query.trim()) {
+        toast(`Searching global database for: ${query}`);
+      }
+    }
+  };
 
   return (
     <header className="h-16 border-b border-border bg-card/50 backdrop-blur-xl flex items-center justify-between px-6 shrink-0 sticky top-0 z-40">
@@ -41,6 +64,7 @@ export function Topbar() {
           <input
             type="text"
             placeholder={placeholders[0]}
+            onKeyDown={handleSearch}
             className="w-full h-10 pl-10 pr-4 rounded-lg bg-muted/50 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all"
           />
         </div>
@@ -73,9 +97,12 @@ export function Topbar() {
         </div>
 
         {/* Notifications */}
-        <button className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+        <button 
+          onClick={handleNotifications}
+          className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+        >
           <Bell className="w-5 h-5" />
-          <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-destructive animate-pulse" />
+          {hasUnread && <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-destructive animate-pulse" />}
         </button>
 
         {/* Avatar */}
