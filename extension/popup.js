@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Dashboard
   document.getElementById('open-dashboard').addEventListener('click', () => {
-    chrome.tabs.create({ url: 'https://cyber-guard-ai-seven.vercel.app' });
+    chrome.tabs.create({ url: 'https://cyber-guard-ai-seven.vercel.app/dashboard' });
   });
 
   // Get current page links

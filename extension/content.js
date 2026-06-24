@@ -427,6 +427,7 @@
   }
 
   // ─── Apply results to DOM links ───────────────────────────
+  const scanResults = {};
   function applyScanResults(results) {
     results.forEach(r => { scanResults[r.url] = r; });
 
