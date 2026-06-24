@@ -10,7 +10,7 @@ const users = [
 ];
 
 async function seed() {
-  const uri = 'mongodb+srv://sarthakgosavi77_db_user:TV9LhobsPbkvSXEJ@cluster0.03kgp84.mongodb.net/cyberguard';
+  const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/cyberguard';
   console.log(`Connecting to ${uri}...`);
   await mongoose.connect(uri);
 

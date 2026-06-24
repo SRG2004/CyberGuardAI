@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth.js';
-import { isModerator } from '../middleware/roles.js';
+import { isAdmin } from '../middleware/roles.js';
 import { paginationValidation } from '../middleware/validate.js';
 import {
   getLiveThreats,
@@ -56,8 +56,8 @@ router.get('/:threatId', authenticate, async (req, res) => {
   res.json({ success: true, data: threat });
 });
 
-// POST /verify/:threatId - verify threat (mod/admin)
-router.post('/verify/:threatId', authenticate, isModerator, async (req, res) => {
+// POST /verify/:threatId - verify threat (admin)
+router.post('/verify/:threatId', authenticate, isAdmin, async (req, res) => {
   const { verdict } = req.body;
   if (!verdict || !['confirmed', 'safe', 'false_positive'].includes(verdict)) {
     return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Valid verdict required (confirmed, safe, false_positive).' } });
