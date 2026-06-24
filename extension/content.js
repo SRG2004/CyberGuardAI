@@ -286,19 +286,18 @@
       const pageUrl = window.location.href;
       if (pageUrl.startsWith('chrome://') || pageUrl.startsWith('chrome-extension://') || pageUrl.startsWith(chrome.runtime.getURL(''))) return;
 
-    const links = extractLinks().filter(l => !l.startsWith('chrome://') && !l.startsWith('chrome-extension://'));
-    const emailText = extractEmailContent();
-    const forms = extractForms();
-    const iframes = extractIframes();
-    const domAnomalies = detectDomAnomalies();
-    const jsSignals = detectJsSignals();
-    const clipboardHijack = detectClipboardHijack();
+      const links = extractLinks().filter(l => !l.startsWith('chrome://') && !l.startsWith('chrome-extension://'));
+      const emailText = extractEmailContent();
+      const forms = extractForms();
+      const iframes = extractIframes();
+      const domAnomalies = detectDomAnomalies();
+      const jsSignals = detectJsSignals();
+      const clipboardHijack = detectClipboardHijack();
 
-    if (clipboardHijack) {
-      domAnomalies.push({ type: 'clipboard_hijack' });
-    }
+      if (clipboardHijack) {
+        domAnomalies.push({ type: 'clipboard_hijack' });
+      }
 
-    try {
       chrome.runtime.sendMessage({
         type: 'SCAN_LINKS',
         payload: {
@@ -311,7 +310,11 @@
           jsSignals,
         },
       }).catch(() => {});
-    } catch (e) {}
+    } catch (e) {
+      if (e.message && e.message.includes('context invalidated')) {
+        // Observer handles its own disconnection or we just silently fail
+      }
+    }
   }
 
   // ─── Receive scan results ─────────────────────────────────
