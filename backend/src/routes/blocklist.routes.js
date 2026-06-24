@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth.js';
-import { isAdmin, isModerator } from '../middleware/roles.js';
+import { isAdmin } from '../middleware/roles.js';
 import { paginationValidation } from '../middleware/validate.js';
 import Blocklist from '../models/Blocklist.js';
 
