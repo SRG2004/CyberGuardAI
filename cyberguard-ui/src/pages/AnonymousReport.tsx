@@ -11,6 +11,7 @@ export default function AnonymousReport() {
   const [type, setType] = useState(reportTypes[0]);
   const [url, setUrl] = useState('');
   const [description, setDescription] = useState('');
+  const [evidence, setEvidence] = useState<File | null>(null);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
 
   const submitReport = useSubmitReport();
@@ -26,12 +27,16 @@ export default function AnonymousReport() {
     formData.append('type', type.toLowerCase().replace(' ', '_'));
     formData.append('url', url);
     formData.append('description', description);
+    if (evidence) {
+      formData.append('evidence', evidence);
+    }
 
     submitReport.mutate(formData, {
       onSuccess: (res: { data?: { anonymousId?: string } }) => {
         setSubmittedId(res.data?.anonymousId || `CG-${Math.random().toString(36).slice(2, 6).toUpperCase()}`);
         setUrl('');
         setDescription('');
+        setEvidence(null);
       },
       onError: () => {
         toast.error('Failed to submit report. Please try again.');
@@ -87,9 +92,18 @@ export default function AnonymousReport() {
             <label className="text-xs text-muted-foreground block mb-1.5">Description</label>
             <textarea value={description} onChange={e => setDescription(e.target.value)} rows={4} placeholder="Describe the threat..." className="w-full px-4 py-3 rounded-lg bg-muted/50 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 resize-none transition-all" />
           </div>
-          <div className="p-3 rounded-lg border border-dashed border-border text-center cursor-pointer hover:border-primary/30 transition-colors">
+          <div className="relative p-3 rounded-lg border border-dashed border-border text-center cursor-pointer hover:border-primary/30 transition-colors">
+            <input 
+              type="file" 
+              accept="image/*" 
+              onChange={e => setEvidence(e.target.files?.[0] || null)} 
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+              title="Upload Evidence"
+            />
             <Upload className="w-5 h-5 text-muted-foreground mx-auto mb-1" />
-            <p className="text-xs text-muted-foreground">Upload evidence (screenshot) — Coming soon</p>
+            <p className="text-xs text-muted-foreground">
+              {evidence ? evidence.name : 'Upload evidence (screenshot)'}
+            </p>
           </div>
           <GlowButton type="submit" className="w-full" size="lg" disabled={submitReport.isPending}>
             {submitReport.isPending ? 'Submitting...' : 'Submit Anonymous Report'}
