@@ -12,9 +12,16 @@ app = FastAPI(title="CyberGuard ML Service", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://cyber-guard-ai-seven.vercel.app",
+        "https://cyberguardai-naip.onrender.com",
+        "http://localhost:5000",
+        "http://localhost:5173",
+        "http://localhost:8001",
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_credentials=True,
 )
 
 # Models directory
