@@ -90,7 +90,7 @@ export async function scanUrl(url, userId = null, source = 'dashboard') {
     durationMs,
   };
 
-  if (canUseCache) {
+  if (canUseCache && !mlResult.failed) {
     extensionScanCache.set(cacheKey, result);
   }
 

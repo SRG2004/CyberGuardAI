@@ -5,7 +5,7 @@ import logger from '../utils/logger.js';
 async function getClient() {
   return axios.create({
     baseURL: env.ML_SERVICE_URL,
-    timeout: 15000,
+    timeout: 60000,
   });
 }
 
@@ -16,7 +16,7 @@ export async function predictUrl(url) {
     return { score: data.score, label: data.label, features: data.features, confidence: data.confidence };
   } catch (err) {
     logger.error('ML URL prediction failed:', err.message);
-    return { score: 0, label: 'unknown', features: [], confidence: 0 };
+    return { score: 0, label: 'unknown', features: [], confidence: 0, failed: true };
   }
 }
 
