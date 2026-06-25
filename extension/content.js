@@ -288,6 +288,7 @@
 
       const links = extractLinks().filter(l => !l.startsWith('chrome://') && !l.startsWith('chrome-extension://'));
       const emailText = extractEmailContent();
+      // console.log('[CyberGuard] Extracted', links.length, 'links');
       const forms = extractForms();
       const iframes = extractIframes();
       const domAnomalies = detectDomAnomalies();
@@ -311,6 +312,7 @@
         },
       }).catch(() => {});
     } catch (e) {
+      console.error('[CyberGuard] triggerScan error:', e);
       if (e.message && e.message.includes('context invalidated')) {
         // Observer handles its own disconnection or we just silently fail
       }

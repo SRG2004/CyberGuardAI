@@ -252,6 +252,14 @@ async function handleScanLinks({ pageUrl, links = [], emailText, forms = [], ifr
     });
   }
 
+  try {
+    const stats = await chrome.storage.local.get(['urlsScanned', 'threatsFound']);
+    await chrome.storage.local.set({ 
+      urlsScanned: (stats.urlsScanned || 0) + Object.keys(results).length,
+      threatsFound: (stats.threatsFound || 0) + malResults.length
+    });
+  } catch (e) {}
+
   return { success: true, data: results };
 }
 
