@@ -135,7 +135,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
   if (message.type === 'OPEN_DASHBOARD') {
-    chrome.tabs.create({ url: 'http://localhost:5173' });
+    chrome.tabs.create({ url: 'https://cyber-guard-ai-seven.vercel.app/dashboard' });
     sendResponse({ ok: true });
     return false;
   }
