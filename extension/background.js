@@ -212,8 +212,8 @@ async function handleScanLinks({ pageUrl, links = [], emailText, forms = [], ifr
               results: Object.entries(results).map(([url, r]) => ({ url, ...r })),
               pageScore: json.data.pageResult?.riskScore || null,
               emailResult: json.data.emailResult || null,
-            });
-          } catch (e) { /* tab may have navigated away */ }
+            }).catch(() => {});
+          } catch (e) { /* fallback */ }
         }
       }
     } catch (e) {
@@ -224,7 +224,7 @@ async function handleScanLinks({ pageUrl, links = [], emailText, forms = [], ifr
           chrome.tabs.sendMessage(sender.tab.id, {
             type: 'SCAN_RESULTS',
             results: Object.entries(results).map(([url, r]) => ({ url, ...r })),
-          });
+          }).catch(() => {});
         } catch (e2) {}
       }
     }
@@ -235,7 +235,7 @@ async function handleScanLinks({ pageUrl, links = [], emailText, forms = [], ifr
         chrome.tabs.sendMessage(sender.tab.id, {
           type: 'SCAN_RESULTS',
           results: Object.entries(results).map(([url, r]) => ({ url, ...r })),
-        });
+        }).catch(() => {});
       } catch (e) {}
     }
   }
@@ -282,7 +282,7 @@ async function handleScanEmail({ subject = '', body }, sender) {
             type: 'SCAN_RESULTS',
             emailResult: json.data.emailResult,
             results: json.data.linkResults ? Object.entries(json.data.linkResults).map(([url, r]) => ({ url, ...r })) : [],
-          });
+          }).catch(() => {});
         } catch (e) {}
       }
     }
