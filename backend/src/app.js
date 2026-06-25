@@ -37,8 +37,8 @@ app.use(cors({
     if (origin.includes('localhost') || origin.includes('127.0.0.1') || allowed.includes(origin)) {
       return callback(null, true);
     }
-    // Allow Vercel preview deployments
-    if (origin.endsWith('.vercel.app')) {
+    // Allow Vercel preview deployments and Chrome extensions
+    if (origin.endsWith('.vercel.app') || origin.startsWith('chrome-extension://')) {
       return callback(null, true);
     }
     callback(new Error(`CORS: origin ${origin} not allowed`));
