@@ -75,7 +75,7 @@ export function Topbar() {
         {/* Role Badge */}
         {userRole && (
           <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md capitalize ${userRole === 'admin' ? 'bg-destructive/10 text-destructive border border-destructive/30' :
-              'bg-primary/10 text-primary border border-primary/20'
+            'bg-primary/10 text-primary border border-primary/20'
             }`}>
             {userRole}
           </span>

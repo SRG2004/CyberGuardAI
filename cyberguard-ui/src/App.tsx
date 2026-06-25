@@ -19,6 +19,7 @@ const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const Profile = lazy(() => import("./pages/Profile"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Install = lazy(() => import("./pages/Install"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -84,6 +85,7 @@ const App = () => {
                   <Route path="/scan-history" element={<ScanHistory />} />
                   <Route path="/report" element={<AnonymousReport />} />
                   <Route path="/extension" element={<ExtensionManager />} />
+                  <Route path="/install" element={<Install />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   <Route path="/profile" element={<Profile />} />
                 </Route>
