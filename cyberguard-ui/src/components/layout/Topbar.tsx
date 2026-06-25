@@ -74,11 +74,9 @@ export function Topbar() {
       <div className="flex items-center gap-4">
         {/* Role Badge */}
         {userRole && (
-          <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md capitalize ${
-            userRole === 'admin' ? 'bg-destructive/10 text-destructive border border-destructive/30' :
-            userRole === 'moderator' ? 'bg-warning/10 text-warning border border-warning/30' :
-            'bg-primary/10 text-primary border border-primary/20'
-          }`}>
+          <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md capitalize ${userRole === 'admin' ? 'bg-destructive/10 text-destructive border border-destructive/30' :
+              'bg-primary/10 text-primary border border-primary/20'
+            }`}>
             {userRole}
           </span>
         )}
@@ -97,7 +95,7 @@ export function Topbar() {
         </div>
 
         {/* Notifications */}
-        <button 
+        <button
           onClick={handleNotifications}
           className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
         >

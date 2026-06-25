@@ -2,6 +2,10 @@
 (function() {
   'use strict';
 
+  // Do not run on the dashboard to prevent recursive scanning
+  const currentUrl = window.location.href;
+  if (currentUrl.includes('cyber-guard-ai-seven.vercel.app') || currentUrl.includes('localhost:5173')) return;
+
   const scanResults = {};
 
   // ─── Global capture-phase click interceptor ───────────────

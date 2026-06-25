@@ -16,7 +16,7 @@ export default function LinkScanner() {
   const handleScan = async () => {
     if (!url || scan.isPending) return;
     try {
-      let finalUrl = url.trim();
+      let finalUrl = url.replace(/\s+/g, '');
       if (!/^https?:\/\//i.test(finalUrl)) {
         finalUrl = 'http://' + finalUrl;
       }
@@ -37,7 +37,7 @@ export default function LinkScanner() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
               value={url}
-              onChange={e => setUrl(e.target.value)}
+              onChange={e => setUrl(e.target.value.replace(/\s+/g, ''))}
               placeholder="https://suspicious-link.example.com"
               className="w-full h-14 pl-12 pr-4 rounded-xl bg-muted/50 border border-border text-foreground font-mono text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
               onKeyDown={e => e.key === 'Enter' && handleScan()}

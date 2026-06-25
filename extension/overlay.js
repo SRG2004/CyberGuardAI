@@ -1,6 +1,9 @@
 (function() {
   'use strict';
 
+  const currentUrl = window.location.href;
+  if (currentUrl.includes('cyber-guard-ai-seven.vercel.app') || currentUrl.includes('localhost:5173')) return;
+
   // Shadow DOM container
   const host = document.createElement('cyberguard-widget');
   host.style.cssText = 'all: initial; position: fixed; bottom: 20px; right: 20px; z-index: 2147483646;';
