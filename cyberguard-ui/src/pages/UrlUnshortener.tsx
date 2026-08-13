@@ -30,8 +30,10 @@ export default function UrlUnshortener() {
     setResult(null);
 
     try {
-      const data = await api.post<UnshortenResult>('/api/tools/unshorten', { url: targetUrl });
-      setResult(data);
+      const response = await api.post<UnshortenResult>('/api/tools/unshorten', { url: targetUrl });
+      if (response.data) {
+        setResult(response.data);
+      }
     } catch (err: any) {
       toast.error('Analysis failed', { description: err.message || 'Network error occurred.' });
     } finally {
