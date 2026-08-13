@@ -17,6 +17,7 @@ const ThreatHunter = lazy(() => import("./pages/ThreatHunter"));
 const ExtensionManager = lazy(() => import("./pages/ExtensionManager"));
 const PasswordCheck = lazy(() => import("./pages/PasswordCheck"));
 const SmsScanner = lazy(() => import("./pages/SmsScanner"));
+const DeviceAudit = lazy(() => import("./pages/DeviceAudit"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const Profile = lazy(() => import("./pages/Profile"));
@@ -88,6 +89,7 @@ const App = () => {
                   <Route path="/report" element={<ThreatHunter />} />
                   <Route path="/password-check" element={<PasswordCheck />} />
                   <Route path="/sms-scanner" element={<SmsScanner />} />
+                  <Route path="/device-audit" element={<DeviceAudit />} />
                   <Route path="/extension" element={<ExtensionManager />} />
                   <Route path="/install" element={<Install />} />
                   <Route path="/settings" element={<SettingsPage />} />
