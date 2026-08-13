@@ -346,7 +346,7 @@ export default function Dashboard() {
                     {categoryData.map((entry, i) => (
                       <Cell
                         key={i}
-                        fill={CATEGORY_COLORS[entry.category] || '#00D4FF'}
+                        fill={CATEGORY_COLORS[entry.category?.toUpperCase()] || '#00D4FF'}
                       />
                     ))}
                   </Pie>
@@ -358,7 +358,7 @@ export default function Dashboard() {
               <div className="flex flex-wrap gap-3 justify-center mt-2">
                 {categoryData.map(c => (
                   <span key={c.category} className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                    <span className="w-2 h-2 rounded-full" style={{ background: CATEGORY_COLORS[c.category] || '#00D4FF' }} />
+                    <span className="w-2 h-2 rounded-full" style={{ background: CATEGORY_COLORS[c.category?.toUpperCase()] || '#00D4FF' }} />
                     {c.category}
                   </span>
                 ))}

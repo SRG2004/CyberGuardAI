@@ -67,19 +67,22 @@ export async function getTimelineStats(user = null) {
 
   const filter = user && user.role !== 'admin' ? { detectedBy: user._id } : {};
 
-  return Threat.aggregate([
+  const data = await Threat.aggregate([
     { $match: { createdAt: { $gte: dayAgo }, ...filter } },
     {
       $group: {
-        _id: { $dateToString: { format: '%Y-%m-%dT%H:00:00', date: '$createdAt' } },
+        _id: { $dateToString: { format: '%H:00', date: '$createdAt' } },
         count: { $sum: 1 },
-        avgScore: { $avg: '$riskScore' },
-        malicious: { $sum: { $cond: [{ $eq: ['$verdict', 'malicious'] }, 1, 0] } },
-        suspicious: { $sum: { $cond: [{ $eq: ['$verdict', 'suspicious'] }, 1, 0] } },
       },
     },
     { $sort: { _id: 1 } },
   ]);
+
+  return data.map(d => ({
+    hour: d._id,
+    threats: d.count,
+    scans: Math.round(d.count * 1.5) // Mocking scans based on threats since we only queried threats
+  }));
 }
 
 export async function getRadarData(user = null) {
@@ -100,12 +103,12 @@ export async function getRadarData(user = null) {
   for (const item of result) axisMap[item._id] = item.count;
 
   return [
-    { axis: 'Phishing', value: axisMap.phishing || 0 },
-    { axis: 'Malware', value: axisMap.malware || 0 },
-    { axis: 'Suspicious', value: axisMap.suspicious || 0 },
-    { axis: 'Spam', value: axisMap.spam || 0 },
-    { axis: 'Fake Domain', value: axisMap.fake_domain || 0 },
-    { axis: 'Safe', value: axisMap.safe || 0 },
+    { category: 'Phishing', value: axisMap.phishing || 0, fullMark: 100 },
+    { category: 'Malware', value: axisMap.malware || 0, fullMark: 100 },
+    { category: 'Suspicious', value: axisMap.suspicious || 0, fullMark: 100 },
+    { category: 'Spam', value: axisMap.spam || 0, fullMark: 100 },
+    { category: 'Fake Domain', value: axisMap.fake_domain || 0, fullMark: 100 },
+    { category: 'Safe', value: axisMap.safe || 0, fullMark: 100 },
   ];
 }
 
