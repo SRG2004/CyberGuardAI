@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Link2, Search, ArrowRight, CheckCircle2, ShieldAlert, Loader2, Link as LinkIcon, CornerDownRight } from 'lucide-react';
 import { GlowButton } from '@/components/ui/GlowButton';
 import { toast } from 'sonner';
-import axios from 'axios';
+import api from '@/lib/api';
 
 type UnshortenResult = {
   originalUrl: string;
@@ -30,15 +30,10 @@ export default function UrlUnshortener() {
     setResult(null);
 
     try {
-      // In a real app, this would use a properly configured Axios instance from hooks
-      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/tools/unshorten`, { url: targetUrl }, { withCredentials: true });
-      if (res.data.success) {
-        setResult(res.data.data);
-      } else {
-        toast.error('Analysis failed', { description: res.data.error?.message || 'Failed to resolve URL.' });
-      }
+      const data = await api.post<UnshortenResult>('/api/tools/unshorten', { url: targetUrl });
+      setResult(data);
     } catch (err: any) {
-      toast.error('Analysis failed', { description: err.response?.data?.error?.message || 'Network error occurred.' });
+      toast.error('Analysis failed', { description: err.message || 'Network error occurred.' });
     } finally {
       setIsAnalyzing(false);
     }

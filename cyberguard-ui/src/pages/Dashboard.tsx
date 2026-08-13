@@ -18,9 +18,11 @@ import {
 
 const CATEGORY_COLORS: Record<string, string> = {
   PHISHING: '#FF3B5C',
-  MALWARE: '#FFB800',
-  SUSPICIOUS: '#00D4FF',
-  SAFE: '#00FF88',
+  MALWARE: '#FF3B5C',
+  SUSPICIOUS: '#FFB800',
+  SPAM: '#FFB800',
+  'FAKE_DOMAIN': '#FFB800',
+  SAFE: '#00D4FF',
 };
 
 function ChartSkeleton() {
@@ -415,9 +417,7 @@ export default function Dashboard() {
             </div>
           )}
         </motion.div>
-        </motion.div>
       </div>
-
       {/* Quick Tools */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }} className="glass-card p-5">
         <h3 className="font-display font-semibold text-foreground text-sm mb-4">Quick Security Tools</h3>
