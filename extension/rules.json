@@ -1,0 +1,11 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "||phishing-example-blocked-test-domain.xyz^",
+      "resourceTypes": ["main_frame", "sub_frame", "script", "xmlhttprequest"]
+    }
+  }
+]

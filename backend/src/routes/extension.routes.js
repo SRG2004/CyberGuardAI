@@ -13,6 +13,8 @@ import { extensionScanRateLimit } from '../middleware/rateLimit.js';
 import logger from '../utils/logger.js';
 import pLimit from 'p-limit';
 
+import { optionalAuth } from '../middleware/auth.js';
+
 const router = Router();
 const scanLimit = pLimit(10);
 
@@ -35,8 +37,9 @@ router.post('/session/ping', async (req, res) => {
   res.json({ success: true });
 });
 
-router.post('/scan', extensionScanRateLimit, async (req, res) => {
+router.post('/scan', optionalAuth, extensionScanRateLimit, async (req, res) => {
   const { sessionId, links, url, emailText } = req.body;
+  const userId = req.userId || null;
 
   if (sessionId) {
     await ExtensionSession.updateOne({ sessionId }, { lastPingAt: new Date() });
@@ -55,12 +58,13 @@ router.post('/scan', extensionScanRateLimit, async (req, res) => {
           return;
         }
         try {
-          const result = await scanLimit(() => scanUrl(link, null, 'extension'));
+          const result = await scanLimit(() => scanUrl(link, userId, 'extension'));
           linkResults[link] = { verdict: result.verdict, riskScore: result.riskScore };
 
           if (result.verdict === 'malicious') {
             try {
               const io = getIo();
+              if (userId) io.to(`user:${userId}`).emit('threat:new', { url: link, verdict: result.verdict, riskScore: result.riskScore });
               io.to(`ext:${sessionId}`).emit('extension:alert', { sessionId, threat: { url: link, verdict: result.verdict, riskScore: result.riskScore } });
             } catch (e) {}
           }
@@ -75,7 +79,7 @@ router.post('/scan', extensionScanRateLimit, async (req, res) => {
   let emailResult = null;
   if (emailText) {
     try {
-      emailResult = await scanEmail('', emailText, null, 'extension');
+      emailResult = await scanEmail('', emailText, userId, 'extension');
     } catch (err) {
       logger.debug('Extension email scan error:', err.message);
     }
@@ -84,11 +88,12 @@ router.post('/scan', extensionScanRateLimit, async (req, res) => {
   let pageResult = null;
   if (url) {
     try {
-      pageResult = await scanUrl(url, null, 'extension');
+      pageResult = await scanUrl(url, userId, 'extension');
     } catch (err) {
       logger.debug('Extension page scan error:', err.message);
     }
   }
+
 
   const session = sessionId ? await ExtensionSession.findOne({ sessionId }).lean() : null;
   if (session) {

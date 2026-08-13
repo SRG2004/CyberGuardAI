@@ -1,6 +1,11 @@
 # Render.com Blueprint — Infrastructure as Code
 # Deploy: Connect GitHub repo → Render will auto-detect this file
 # Docs: https://docs.render.com/blueprint-spec
+#
+# Architecture:
+#   Backend API   → Render (this file)
+#   ML Service    → Hugging Face Spaces (separate deployment)
+#   Frontend      → Vercel
 
 services:
   # ─── Backend API ────────────────────────────────────
@@ -29,27 +34,10 @@ services:
       - key: REFRESH_TOKEN_EXPIRY
         value: "7d"
       - key: ML_SERVICE_URL
-        fromService:
-          name: cyberguard-ml
-          type: web
-          property: host
+        # Point to your HF Spaces deployment URL
+        # Format: https://<your-username>-cyberguard-ml.hf.space
+        sync: false  # Set manually in Render dashboard
       - key: FRONTEND_URL
         sync: false  # Set to your Vercel URL after deploying frontend
       - key: EXTENSION_API_SECRET
         generateValue: true
-
-  # ─── ML Service ─────────────────────────────────────
-  - type: web
-    name: cyberguard-ml
-    runtime: python
-    region: oregon
-    plan: free
-    rootDir: ml-service
-    buildCommand: pip install -r requirements.txt
-    startCommand: python -m uvicorn main:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /health
-    envVars:
-      - key: PORT
-        value: "8001"
-      - key: PYTHONUNBUFFERED
-        value: "1"

@@ -1,3 +1,4 @@
+# ── Production dependencies (deployed on HF Spaces) ──────────────────
 fastapi>=0.104.0
 uvicorn>=0.24.0
 scikit-learn>=1.3.0
@@ -12,3 +13,11 @@ imbalanced-learn>=0.11.0
 requests>=2.31.0
 python-Levenshtein>=0.21.0
 tldextract>=5.0.0
+onnxruntime>=1.16.0
+
+# Transformer inference (HF Spaces has 16GB RAM — can run full PyTorch)
+torch>=2.0.0
+transformers>=4.35.0
+gradio>=5.0.0
+huggingface_hub>=0.25.0
+

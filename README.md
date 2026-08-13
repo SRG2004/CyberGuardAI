@@ -4,17 +4,17 @@ AI-powered phishing and cybersecurity threat detection platform with **99.1% URL
 
 ## Architecture
 
-| Component | Tech | Port |
+| Component | Tech | Environment |
 |---|---|---|
-| **Frontend** | React + Vite + Tailwind + shadcn/ui | 5173 |
-| **Backend API** | Node.js + Express + MongoDB | 5000 |
-| **ML Service** | Python + FastAPI + XGBoost | 8001 |
-| **Extension** | Chrome MV3 Extension | — |
+| **Frontend** | React + Vite + Tailwind + shadcn/ui | Vercel |
+| **Backend API** | Node.js + Express + MongoDB | Render.com |
+| **ML Microservice** | Python + FastAPI + DistilBERT + XGBoost | Hugging Face Spaces (16GB RAM) |
+| **Extension** | Chrome MV3 Extension | Browser |
 
 ## Features
 
-- **URL Phishing Detection** — 39 features, trained on 150K real URLs from PhishTank, OpenPhish, URLhaus
-- **Email Phishing Detection** — TF-IDF + urgency analysis + link detection
+- **URL Phishing Detection** — DistilBERT Transformer + XGBoost ensemble (39 features), trained on PhishTank, OpenPhish, URLhaus
+- **Email Phishing Detection** — Fine-tuned DistilBERT Transformer + urgency analysis + link detection
 - **Chrome Extension** — Real-time page scanning with form, iframe, DOM anomaly, and JS obfuscation detection
 - **Dashboard** — Threat analytics, scan history, blocklist management
 
@@ -43,13 +43,12 @@ cd cyberguard-ui && npm install && npm run dev
 
 ## Deploy to Production
 
-### Option 1: Render.com + Vercel (Free)
+### Option 1: Render.com + Hugging Face Spaces + Vercel (Recommended Free Stack)
 
 1. **MongoDB Atlas** — Create free cluster at [mongodb.com/atlas](https://www.mongodb.com/atlas)
-2. **Push to GitHub** — `git push origin main`
-3. **Render.com** — Connect repo → auto-detects `render.yaml` → deploys backend + ML service
-4. **Vercel** — Import `cyberguard-ui` folder → auto-deploys frontend
-5. **Set env vars** — Update `MONGODB_URI`, `FRONTEND_URL`, `ML_SERVICE_URL` in Render dashboard
+2. **ML Microservice (Hugging Face Spaces)** — Create a **Gradio** Space at [huggingface.co/spaces](https://huggingface.co/spaces) (free tier with 16GB RAM), upload `ml-service/` folder.
+3. **Backend (Render.com)** — Connect repo → auto-detects `render.yaml` → deploys Node.js backend. Set `ML_SERVICE_URL` to your HF Space URL.
+4. **Frontend (Vercel)** — Import `cyberguard-ui` folder → auto-deploys frontend.
 
 ### Option 2: Docker Compose
 

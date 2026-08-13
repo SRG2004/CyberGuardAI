@@ -8,39 +8,141 @@
 </head>
 <body>
   <div class="popup-container">
+    <!-- Header -->
     <div class="header">
-      <h1><span class="shield-icon">&#x1F6E1;&#xFE0F;</span>CyberGuard AI</h1>
+      <div class="brand">
+        <div class="shield-badge">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <div class="brand-title">
+          <h1>CyberGuard AI</h1>
+          <span class="version-tag">v2.1.0</span>
+        </div>
+      </div>
+      <button id="whitelist-btn" class="whitelist-btn" title="Whitelist Current Site">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span>Trusted</span>
+      </button>
     </div>
-    <div class="session-stats" id="session-stats">
+
+    <!-- Active Page Threat Gauge Card -->
+    <div class="threat-card" id="threat-card">
+      <div class="gauge-container">
+        <svg class="gauge" viewBox="0 0 36 36">
+          <path class="gauge-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+          <path class="gauge-fill" id="gauge-fill" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+        </svg>
+        <div class="gauge-text">
+          <span class="score-num" id="page-score">0</span>
+          <span class="score-unit">RISK</span>
+        </div>
+      </div>
+      <div class="threat-info">
+        <h2 id="page-verdict">Scanning Domain...</h2>
+        <p id="page-domain" class="domain-name">Checking current tab...</p>
+      </div>
+    </div>
+
+    <!-- Live Stats -->
+    <div class="session-stats">
       <div class="stat">
         <span class="stat-value" id="urls-scanned">0</span>
-        <span class="stat-label">URLs Scanned</span>
+        <span class="stat-label">URLs Checked</span>
       </div>
       <div class="stat">
-        <span class="stat-value" id="threats-found">0</span>
-        <span class="stat-label">Threats Found</span>
+        <span class="stat-value threat-val" id="threats-found">0</span>
+        <span class="stat-label">Threats Blocked</span>
       </div>
       <div class="stat">
-        <span class="stat-value" id="session-status">Active</span>
-        <span class="stat-label">Status</span>
+        <span class="stat-value safe-val" id="session-status">ON</span>
+        <span class="stat-label">Shield Status</span>
       </div>
     </div>
+
+    <!-- Navigation Tabs -->
     <div class="tabs">
-      <button class="tab-btn active" data-tab="page">Page</button>
-      <button class="tab-btn" data-tab="links">Links</button>
+      <button class="tab-btn active" data-tab="links">Link Scanner</button>
+      <button class="tab-btn" data-tab="protection">Shield Controls</button>
+      <button class="tab-btn" data-tab="account">Account Sync</button>
     </div>
-    <div class="tab-content" id="tab-panel">
-      <div class="tab-pane active" id="page-tab">
-        <p id="page-status">Scanning page...</p>
-      </div>
-      <div class="tab-pane" id="links-tab">
+
+    <!-- Tab Contents -->
+    <div class="tab-content">
+      <!-- Link Scanner Tab -->
+      <div class="tab-pane active" id="links-tab">
         <div id="link-list" class="link-list">
-          <p class="empty-state">No links scanned yet.</p>
+          <p class="empty-state">Scanning links on current page...</p>
+        </div>
+      </div>
+
+      <!-- Protection Controls Tab -->
+      <div class="tab-pane" id="protection-tab">
+        <div class="toggle-group">
+          <div class="toggle-item">
+            <div class="toggle-label">
+              <strong>Real-Time Link Shield</strong>
+              <span>Scans links and blocks phishing targets</span>
+            </div>
+            <input type="checkbox" id="toggle-link-shield" checked>
+          </div>
+          <div class="toggle-item">
+            <div class="toggle-label">
+              <strong>Form Credential Guard</strong>
+              <span>Intercepts password submissions on untrusted sites</span>
+            </div>
+            <input type="checkbox" id="toggle-form-guard" checked>
+          </div>
+          <div class="toggle-item">
+            <div class="toggle-label">
+              <strong>Network Declarative Filter</strong>
+              <span>Hard-blocks requests to malicious domains</span>
+            </div>
+            <input type="checkbox" id="toggle-network-shield" checked>
+          </div>
+        </div>
+      </div>
+
+      <!-- Account Sync Tab -->
+      <div class="tab-pane" id="account-tab">
+        <div id="auth-logged-out" class="auth-box">
+          <h3 class="auth-title">Sync Scans to Dashboard</h3>
+          <p class="auth-desc">Log in with your CyberGuard account to view all extension threat scans on your personal Web Dashboard.</p>
+          <form id="popup-login-form" class="auth-form">
+            <input type="email" id="login-email" placeholder="Email Address" required class="auth-input">
+            <input type="password" id="login-password" placeholder="Password" required class="auth-input">
+            <button type="submit" id="login-btn" class="auth-submit-btn">Log In & Sync Account</button>
+          </form>
+          <p id="auth-error" class="auth-error-msg"></p>
+        </div>
+        <div id="auth-logged-in" class="auth-box" style="display: none;">
+          <div class="account-badge-card">
+            <div class="user-avatar">👤</div>
+            <div class="user-details">
+              <strong>Dashboard Sync Active</strong>
+              <span id="user-email-display">user@example.com</span>
+            </div>
+          </div>
+          <p class="sync-note">All phishing detections from this browser extension are synced directly to your personal Dashboard scan history.</p>
+          <button id="logout-btn" class="logout-btn">Disconnect Account</button>
         </div>
       </div>
     </div>
-    <button id="open-dashboard" class="dashboard-btn">Open Dashboard &rarr;</button>
+
+
+    <!-- Footer CTA -->
+    <button id="open-dashboard" class="dashboard-btn">
+      <span>Open Security Dashboard</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+        <polyline points="12 5 19 12 12 19"></polyline>
+      </svg>
+    </button>
   </div>
+
   <script src="popup.js"></script>
 </body>
 </html>

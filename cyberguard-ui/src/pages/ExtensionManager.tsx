@@ -94,11 +94,33 @@ export default function ExtensionManager() {
         ))}
       </div>
 
-      {/* Install Guide */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-card p-6">
-        <h3 className="font-display font-semibold text-foreground text-sm mb-4">Install Guide</h3>
-        <div className="space-y-3">
-          {['Open chrome://extensions in Chrome', 'Enable Developer Mode (top right toggle)', 'Click "Load unpacked"', 'Select the extension folder from this project'].map((step, i) => (
+      {/* Install Guide & Account Pairing */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-card p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-display font-semibold text-foreground text-sm">Add to Chrome & Account Pairing</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">Install the browser extension to automatically sync real-time threat scans to your dashboard.</p>
+          </div>
+          <GlowButton
+            onClick={() => {
+              window.open('https://github.com/SRG2004/CyberGuardAI/tree/main/extension', '_blank');
+            }}
+            icon={Download}
+            variant="cyan"
+            size="sm"
+          >
+            Download Extension Folder
+          </GlowButton>
+        </div>
+
+        <div className="space-y-3 pt-2">
+          {[
+            'Open chrome://extensions in Google Chrome',
+            'Enable "Developer Mode" using the toggle in the top right corner',
+            'Click "Load unpacked" and select the extension/ folder',
+            'Click the CyberGuard AI icon in your browser toolbar -> Go to "Account Sync"',
+            `Log in with your account email (${user?.email || 'your email'}) to sync scans to this dashboard`,
+          ].map((step, i) => (
             <div key={i} className="flex items-center gap-3">
               <span className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs text-primary font-bold shrink-0">{i + 1}</span>
               <p className="text-sm text-muted-foreground">{step}</p>
@@ -109,3 +131,4 @@ export default function ExtensionManager() {
     </div>
   );
 }
+

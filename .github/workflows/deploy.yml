@@ -65,20 +65,42 @@ jobs:
             echo "RENDER_BACKEND_DEPLOY_HOOK not set, skipping"
           fi
 
-  # ─── Deploy ML Service to Render ────────────────────
-  deploy-ml:
-    name: Deploy ML Service
+  # ─── Sync ML Service to Hugging Face Spaces ────────
+  sync-hf-space:
+    name: Sync ML Service to Hugging Face
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Render Deploy
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync ml-service to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          if [ -n "${{ secrets.RENDER_ML_DEPLOY_HOOK }}" ]; then
-            curl -s "${{ secrets.RENDER_ML_DEPLOY_HOOK }}"
-            echo "ML service deploy triggered"
+          if [ -n "$HF_TOKEN" ]; then
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+            # Clone HF space repo
+            git clone https://SRG2004:$HF_TOKEN@huggingface.co/spaces/SRG4545/Cyberguard_AI_ML_Service hf_repo
+
+            # Copy all files from ml-service/ into hf_repo/
+            rsync -av --delete --exclude='.git' ml-service/ hf_repo/
+
+            cd hf_repo
+            git add .
+            if git diff --staged --quiet; then
+              echo "No changes to push to Hugging Face Space."
+            else
+              git commit -m "Auto-sync from GitHub main branch"
+              git push https://SRG2004:$HF_TOKEN@huggingface.co/spaces/SRG4545/Cyberguard_AI_ML_Service main
+              echo "Successfully synced to Hugging Face Space!"
+            fi
           else
-            echo "RENDER_ML_DEPLOY_HOOK not set, skipping"
+            echo "HF_TOKEN secret not set. Skipping HF Space sync."
           fi
 
   # ─── Deploy Frontend to Vercel ──────────────────────

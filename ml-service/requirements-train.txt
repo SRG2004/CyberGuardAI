@@ -1,0 +1,9 @@
+# ── Training dependencies (runs locally, NOT on HF Spaces) ───────────
+# Install with: pip install -r requirements-train.txt
+-r requirements.txt
+
+catboost>=1.2.0
+shap>=0.43.0
+onnx>=1.15.0
+skl2onnx>=1.16.0
+optimum>=1.14.0

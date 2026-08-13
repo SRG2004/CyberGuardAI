@@ -43,6 +43,13 @@ except ImportError:
     print("Note: lightgbm not installed. Install with: pip install lightgbm")
 
 try:
+    from catboost import CatBoostClassifier
+    HAS_CATBOOST = True
+except ImportError:
+    HAS_CATBOOST = False
+    print("Note: catboost not installed. Install with: pip install catboost")
+
+try:
     from imblearn.over_sampling import SMOTE
     from imblearn.pipeline import Pipeline as ImbPipeline
     HAS_IMBLEARN = True
@@ -50,9 +57,25 @@ except ImportError:
     HAS_IMBLEARN = False
     print("Note: imbalanced-learn not installed. Install with: pip install imbalanced-learn")
 
+try:
+    import shap
+    HAS_SHAP = True
+except ImportError:
+    HAS_SHAP = False
+    print("Note: shap not installed. Install with: pip install shap")
+
+try:
+    import skl2onnx
+    from skl2onnx.common.data_types import FloatTensorType
+    HAS_SKL2ONNX = True
+except ImportError:
+    HAS_SKL2ONNX = False
+    print("Note: skl2onnx not installed. Install with: pip install skl2onnx onnx")
+
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 MODELS_DIR = os.path.join(os.path.dirname(__file__), 'models')
 os.makedirs(MODELS_DIR, exist_ok=True)
+
 os.makedirs(DATA_DIR, exist_ok=True)
 
 
@@ -256,6 +279,16 @@ def train_url_model():
             )),
         ])
 
+    if HAS_CATBOOST:
+        candidates['CatBoost'] = Pipeline([
+            ('scaler', StandardScaler()),
+            ('clf', CatBoostClassifier(
+                iterations=500, depth=8, learning_rate=0.05,
+                random_seed=42, verbose=0
+            )),
+        ])
+
+
     # ─── Train and evaluate all candidates ────────────────────
     best_name = None
     best_acc = 0
@@ -367,9 +400,30 @@ def train_url_model():
     model_path = os.path.join(MODELS_DIR, 'phishing_model.pkl')
     joblib.dump(model_data, model_path)
     print(f"\n[OK] Best model ({best_name}) saved to {model_path}")
-    print(f"  Training time: {elapsed:.1f}s")
 
+    # Export to ONNX format for Chrome Extension fast-path offline inference
+    if HAS_SKL2ONNX:
+        try:
+            initial_type = [('float_input', FloatTensorType([None, len(feature_names)]))]
+            onnx_model = skl2onnx.convert_sklearn(best_pipeline, initial_types=initial_type)
+            onnx_path = os.path.join(MODELS_DIR, 'phishing_model.onnx')
+            with open(onnx_path, "wb") as f:
+                f.write(onnx_model.SerializeToString())
+            print(f"[OK] ONNX model exported to {onnx_path}")
+
+            # Also copy to extension/ directory if it exists
+            ext_models_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'extension', 'models')
+            os.makedirs(ext_models_dir, exist_ok=True)
+            ext_onnx_path = os.path.join(ext_models_dir, 'phishing_model.onnx')
+            with open(ext_onnx_path, "wb") as f:
+                f.write(onnx_model.SerializeToString())
+            print(f"[OK] Copied ONNX model for Chrome Extension to {ext_onnx_path}")
+        except Exception as e:
+            print(f"Note: ONNX export skipped ({e})")
+
+    print(f"  Training time: {elapsed:.1f}s")
     return model_data
+
 
 
 # ─── Email Data Loading ──────────────────────────────────────────────

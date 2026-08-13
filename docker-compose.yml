@@ -18,7 +18,7 @@ services:
     env_file: .env
     environment:
       - MONGODB_URI=mongodb://mongodb:27017/cyberguard
-      - ML_SERVICE_URL=http://ml-service:8001
+      - ML_SERVICE_URL=http://ml-service:7860
     volumes:
       - ./backend/logs:/app/logs
       - ./backend/uploads:/app/uploads
@@ -31,7 +31,8 @@ services:
   ml-service:
     build: ./ml-service
     ports:
-      - "8001:8001"
+      - "7860:7860"
+      - "8001:7860"
     volumes:
       - ./ml-service/models:/app/models
       - ./ml-service/data:/app/data

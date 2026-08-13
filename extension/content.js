@@ -32,6 +32,38 @@
     }
   }, true); // capture: true = fires before target handlers
 
+  // ─── Form submit credential protection interceptor ─────────
+  document.addEventListener('submit', (e) => {
+    const form = e.target;
+    if (!form || !(form instanceof HTMLFormElement)) return;
+
+    const hasPassword = !!form.querySelector('input[type="password"]');
+    if (!hasPassword) return;
+
+    if (form.getAttribute('data-cyberguard-approved') === 'true') return;
+
+    const currentHost = window.location.hostname.toLowerCase();
+    const actionAttr = form.getAttribute('action') || '';
+    let targetHost = currentHost;
+    try {
+      if (actionAttr) targetHost = new URL(actionAttr, window.location.href).hostname.toLowerCase();
+    } catch (err) {}
+
+    const pageResult = scanResults[window.location.href];
+    if (targetHost !== currentHost || (pageResult && pageResult.verdict !== 'safe')) {
+      const confirmSubmit = window.confirm(
+        `[CyberGuard AI Safeguard]\n\nCaution: You are about to submit password credentials to "${targetHost}".\n\nIf this domain looks unfamiliar or suspicious, cancel immediately to prevent credential harvesting.`
+      );
+      if (!confirmSubmit) {
+        e.preventDefault();
+        e.stopPropagation();
+      } else {
+        form.setAttribute('data-cyberguard-approved', 'true');
+      }
+    }
+  }, true);
+
+
   // ─── Extract all external links ────────────────────────────
   function extractLinks() {
     const links = [];

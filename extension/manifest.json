@@ -3,8 +3,28 @@
   "name": "CyberGuard AI",
   "version": "2.0.0",
   "description": "AI-powered phishing and threat detection — real-time ML analysis with 95%+ accuracy.",
-  "permissions": ["activeTab", "storage", "alarms", "notifications", "tabs", "scripting", "webNavigation"],
+  "permissions": [
+    "activeTab",
+    "storage",
+    "alarms",
+    "notifications",
+    "tabs",
+    "scripting",
+    "webNavigation",
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess"
+  ],
   "host_permissions": ["https://*/*", "http://*/*"],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_1",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  },
+
   "background": {
     "service_worker": "background.js"
   },

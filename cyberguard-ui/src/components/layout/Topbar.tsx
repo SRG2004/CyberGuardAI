@@ -1,5 +1,5 @@
-import { Bell, Search, Shield } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { Bell, Search, Shield, Puzzle } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -27,6 +27,7 @@ const placeholders = [
 
 export function Topbar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const userRole = useAuthStore((s) => s.user?.role);
   const [hasUnread, setHasUnread] = useState(true);
   const title = pageTitles[location.pathname] || 'CyberGuard AI';
@@ -72,6 +73,16 @@ export function Topbar() {
 
       {/* Right section */}
       <div className="flex items-center gap-4">
+        {/* Add Extension to Chrome Button */}
+        <button
+          onClick={() => navigate('/extension')}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary text-xs font-semibold transition-all shadow-sm"
+          title="Add Extension to Chrome"
+        >
+          <Puzzle className="w-4 h-4" />
+          <span className="hidden sm:inline">Add to Chrome</span>
+        </button>
+
         {/* Role Badge */}
         {userRole && (
           <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md capitalize ${userRole === 'admin' ? 'bg-destructive/10 text-destructive border border-destructive/30' :
@@ -111,3 +122,4 @@ export function Topbar() {
     </header>
   );
 }
+

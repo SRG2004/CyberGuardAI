@@ -43,3 +43,5 @@ desktop.ini
 .agents/
 .claude/
 .antigravityignore
+hf_space*/
+implementation_plan.md

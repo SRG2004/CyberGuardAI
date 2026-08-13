@@ -5,7 +5,7 @@ import logger from '../utils/logger.js';
 async function getClient() {
   return axios.create({
     baseURL: env.ML_SERVICE_URL,
-    timeout: 60000,
+    timeout: 120000,  // 120s — HF Spaces cold starts can take 60-90s
   });
 }
 

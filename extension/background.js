@@ -44,12 +44,43 @@ async function syncBlocklist() {
     if (json.success && json.data) {
       localBlocklist = new Set(json.data.map(d => d.domain));
       await chrome.storage.local.set({ localBlocklist: [...localBlocklist] });
+      updateDeclarativeRules([...localBlocklist]);
     }
   } catch (e) {
     const stored = await chrome.storage.local.get(['localBlocklist']);
-    if (stored.localBlocklist) localBlocklist = new Set(stored.localBlocklist);
+    if (stored.localBlocklist) {
+      localBlocklist = new Set(stored.localBlocklist);
+      updateDeclarativeRules([...localBlocklist]);
+    }
   }
 }
+
+// ─── DeclarativeNetRequest Dynamic Rules Update ─────────────
+async function updateDeclarativeRules(domains) {
+  if (!chrome.declarativeNetRequest || !Array.isArray(domains)) return;
+  try {
+    const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
+    const removeRuleIds = existingRules.map(r => r.id);
+
+    const newRules = domains.slice(0, 1000).map((domain, index) => ({
+      id: index + 100,
+      priority: 1,
+      action: { type: 'block' },
+      condition: {
+        urlFilter: `||${domain}^`,
+        resourceTypes: ['main_frame', 'sub_frame', 'script', 'xmlhttprequest']
+      }
+    }));
+
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: removeRuleIds,
+      addRules: newRules
+    });
+  } catch (err) {
+    console.warn('[CyberGuard] DeclarativeNetRequest update error:', err);
+  }
+}
+
 
 // Restore blocklist from storage on worker wake
 chrome.storage.local.get(['localBlocklist']).then(stored => {
@@ -141,6 +172,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
+// ─── Auth Headers Helper ────────────────────────────────────
+async function getAuthHeaders() {
+  const stored = await chrome.storage.local.get(['userToken']);
+  const headers = { 'Content-Type': 'application/json' };
+  if (stored.userToken) {
+    headers['Authorization'] = `Bearer ${stored.userToken}`;
+  }
+  return headers;
+}
+
 // ─── Scan Links (enhanced with page context) ─────────────────
 async function handleScanLinks({ pageUrl, links = [], emailText, forms = [], iframes = [], domAnomalies = [], jsSignals = [] }, sender) {
   if (!sessionId) await getSessionId();
@@ -175,9 +216,10 @@ async function handleScanLinks({ pageUrl, links = [], emailText, forms = [], ifr
   if (remaining.size > 0 || forms.length > 0 || iframes.length > 0 || domAnomalies.length > 0) {
     const toScan = [...remaining].slice(0, 50);
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch(`${apiUrl}/api/extension/scan`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           sessionId,
           url: pageUrl,
@@ -187,6 +229,7 @@ async function handleScanLinks({ pageUrl, links = [], emailText, forms = [], ifr
           forms: forms.slice(0, 10),
           iframes: iframes.slice(0, 20),
           domAnomalies: domAnomalies.slice(0, 20),
+
           jsSignals: jsSignals.slice(0, 15),
           redirectChain: redirectChain.slice(-10),
         }),
@@ -269,11 +312,13 @@ async function handleScanEmail({ subject = '', body }, sender) {
   const apiUrl = await getApiUrl();
 
   try {
+    const headers = await getAuthHeaders();
     const res = await fetch(`${apiUrl}/api/extension/scan`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ sessionId, emailText: body }),
     });
+
     const json = await res.json();
     if (json.success && json.data) {
       if (sender.tab?.id) {

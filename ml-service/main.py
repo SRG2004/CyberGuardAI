@@ -8,7 +8,7 @@ import joblib
 import numpy as np
 import re
 
-app = FastAPI(title="CyberGuard ML Service", version="2.0.0")
+app = FastAPI(title="CyberGuard ML Service", version="3.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,7 +18,10 @@ app.add_middleware(
         "http://localhost:5000",
         "http://localhost:5173",
         "http://localhost:8001",
+        "http://localhost:7860",
+        # HF Spaces domains (wildcard handled by allow_origin_regex below)
     ],
+    allow_origin_regex=r"https://.*\.hf\.space",
     allow_methods=["*"],
     allow_headers=["*"],
     allow_credentials=True,
@@ -27,8 +30,14 @@ app.add_middleware(
 # Models directory
 MODELS_DIR = os.path.join(os.path.dirname(__file__), 'models')
 
+# ── Global model references ───────────────────────────────────────────
 url_model = None
 email_model = None
+
+# Transformer models (loaded separately)
+url_transformer = None       # { 'model', 'tokenizer' } or None
+email_transformer = None     # { 'model', 'tokenizer' } or None
+
 
 class UrlRequest(BaseModel):
     url: str
@@ -47,12 +56,63 @@ class PageRequest(BaseModel):
     js_signals: List[dict] = []
     redirect_chain: List[str] = []
 
+
+# ── Transformer helper ────────────────────────────────────────────────
+def _transformer_predict(model, tokenizer, text: str, max_length: int = 128) -> float:
+    """
+    Run a single text through a HuggingFace Transformer and return the
+    phishing probability (class 1 softmax score).
+    """
+    try:
+        import torch
+
+        inputs = tokenizer(
+            text,
+            truncation=True,
+            max_length=max_length,
+            padding='max_length',
+            return_tensors='pt',
+        )
+        device = next(model.parameters()).device
+        inputs = {k: v.to(device) for k, v in inputs.items()}
+
+        with torch.no_grad():
+            logits = model(**inputs).logits
+
+        probs = torch.softmax(logits, dim=1)
+        return float(probs[0][1])  # class 1 = phishing
+    except Exception as e:
+        print(f"Transformer predict error: {e}")
+        return -1.0  # sentinel: caller should ignore
+
+
+def _load_transformer(model_dir: str, label: str):
+    """Load a fine-tuned Transformer model + tokenizer from a directory."""
+    if not os.path.exists(model_dir):
+        return None
+    try:
+        import torch
+        from transformers import AutoTokenizer, AutoModelForSequenceClassification
+
+        tokenizer = AutoTokenizer.from_pretrained(model_dir)
+        model = AutoModelForSequenceClassification.from_pretrained(model_dir)
+        model.eval()
+        print(f"  ✓ {label} Transformer loaded from {model_dir}")
+        return {"model": model, "tokenizer": tokenizer}
+    except Exception as e:
+        print(f"  ✗ {label} Transformer failed: {e}")
+        return None
+
+
+# ── Startup ───────────────────────────────────────────────────────────
 @app.on_event("startup")
 def startup():
-    global url_model, email_model
+    global url_model, email_model, url_transformer, email_transformer
+
     url_path = os.path.join(MODELS_DIR, 'phishing_model.pkl')
     email_path = os.path.join(MODELS_DIR, 'email_model.pkl')
 
+    # 1. Load sklearn / XGBoost models
     if not os.path.exists(url_path) or not os.path.exists(email_path):
         print("Models not found, training...")
         from train import train_url_model, train_email_model
@@ -67,6 +127,25 @@ def startup():
         print(f"  Email model: {email_model.get('model_type', 'unknown')} "
               f"(accuracy={email_model.get('accuracy', 0)})")
 
+    # 2. Load fine-tuned Transformer models (if available)
+    print("\nLoading Transformer models...")
+    url_transformer_dir = os.path.join(MODELS_DIR, 'finetuned_url_transformer')
+    email_transformer_dir = os.path.join(MODELS_DIR, 'finetuned_email_transformer')
+    # Also check legacy single-transformer directory
+    legacy_transformer_dir = os.path.join(MODELS_DIR, 'finetuned_phishing_transformer')
+
+    url_transformer = _load_transformer(url_transformer_dir, "URL")
+    email_transformer = _load_transformer(email_transformer_dir, "Email")
+
+    # Fallback: if we have the legacy single transformer, use it for email
+    if email_transformer is None:
+        email_transformer = _load_transformer(legacy_transformer_dir, "Email (legacy)")
+
+    loaded = sum(1 for t in [url_transformer, email_transformer] if t is not None)
+    print(f"  Transformer models loaded: {loaded}/2")
+
+
+# ── Health Check ──────────────────────────────────────────────────────
 @app.get("/health")
 def health_check():
     return {
@@ -81,6 +160,10 @@ def health_check():
         "email_model": {
             "accuracy": email_model.get('accuracy', 0) if email_model else 0,
             "model_type": email_model.get('model_type', 'none') if email_model else 'none',
+        },
+        "transformers": {
+            "url_transformer_loaded": url_transformer is not None,
+            "email_transformer_loaded": email_transformer is not None,
         },
     }
 
@@ -111,8 +194,15 @@ def model_info():
             "trained_at": email_model.get('trained_at', 'unknown') if email_model else 'unknown',
             "all_results": email_model.get('all_results', {}) if email_model else {},
         },
+        "transformers": {
+            "url_transformer_loaded": url_transformer is not None,
+            "email_transformer_loaded": email_transformer is not None,
+            "base_model": "distilbert-base-uncased",
+        },
     }
 
+
+# ── /predict/url ──────────────────────────────────────────────────────
 @app.post("/predict/url")
 def predict_url(req: UrlRequest):
     try:
@@ -123,13 +213,29 @@ def predict_url(req: UrlRequest):
         X = np.array([feature_order], dtype=np.float64)
         X = np.nan_to_num(X, nan=0.0, posinf=1e6, neginf=-1e6)
 
-        # Get probability
+        # Feature-based model probability
         if hasattr(url_model['pipeline'], 'predict_proba'):
             prob = url_model['pipeline'].predict_proba(X)[0]
-            phishing_prob = float(prob[1]) if len(prob) > 1 else 0.0
+            feature_prob = float(prob[1]) if len(prob) > 1 else 0.0
         else:
             prediction = url_model['pipeline'].predict(X)[0]
-            phishing_prob = float(prediction)
+            feature_prob = float(prediction)
+
+        # ── Transformer ensemble ──────────────────────────────
+        transformer_score = -1.0
+        if url_transformer is not None:
+            transformer_score = _transformer_predict(
+                url_transformer['model'],
+                url_transformer['tokenizer'],
+                req.url,
+                max_length=128,
+            )
+
+        # Ensemble: 40% transformer + 60% feature-model (if transformer is available)
+        if transformer_score >= 0:
+            phishing_prob = 0.4 * transformer_score + 0.6 * feature_prob
+        else:
+            phishing_prob = feature_prob
 
         # Determine features that contributed
         active_features = []
@@ -164,6 +270,9 @@ def predict_url(req: UrlRequest):
         if features.get('port_present', 0) == 1:
             active_features.append('non_standard_port')
 
+        if transformer_score >= 0 and transformer_score > 0.5:
+            active_features.append('transformer_phishing_signal')
+
         label = 'phishing' if phishing_prob > 0.5 else 'legitimate'
 
         return {
@@ -173,10 +282,17 @@ def predict_url(req: UrlRequest):
             "confidence": round(max(phishing_prob, 1 - phishing_prob), 4),
             "model_type": url_model.get('model_type', 'unknown'),
             "model_accuracy": url_model.get('accuracy', 0),
+            "transformer_enhanced": transformer_score >= 0,
+            "breakdown": {
+                "feature_score": round(feature_prob, 4),
+                "transformer_score": round(transformer_score, 4) if transformer_score >= 0 else None,
+            },
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
 
+
+# ── /predict/email ────────────────────────────────────────────────────
 @app.post("/predict/email")
 def predict_email(req: EmailRequest):
     try:
@@ -184,19 +300,35 @@ def predict_email(req: EmailRequest):
 
         email_feats = extract_email_features(req.subject, req.body)
 
-        # TF-IDF prediction
+        # Text probability — prefer Transformer, fall back to TF-IDF
         cleaned = clean_email_text(f"{req.subject} {req.body}")
         text_prob = 0.0
+        used_transformer = False
 
-        if email_model and 'pipeline' in email_model:
-            if hasattr(email_model['pipeline'], 'predict_proba'):
-                probs = email_model['pipeline'].predict_proba([cleaned])
-                text_prob = float(probs[0][1]) if len(probs[0]) > 1 else 0.0
-            else:
-                # LinearSVC doesn't have predict_proba — use decision_function
-                decision = email_model['pipeline'].decision_function([cleaned])
-                # Convert to probability-like score using sigmoid
-                text_prob = 1.0 / (1.0 + np.exp(-float(decision[0])))
+        if email_transformer is not None:
+            # Use Transformer for text classification
+            email_text = f"{req.subject} {req.body}".strip()
+            t_prob = _transformer_predict(
+                email_transformer['model'],
+                email_transformer['tokenizer'],
+                email_text,
+                max_length=256,
+            )
+            if t_prob >= 0:
+                text_prob = t_prob
+                used_transformer = True
+
+        # Fallback: TF-IDF / LinearSVC
+        if not used_transformer:
+            if email_model and 'pipeline' in email_model:
+                if hasattr(email_model['pipeline'], 'predict_proba'):
+                    probs = email_model['pipeline'].predict_proba([cleaned])
+                    text_prob = float(probs[0][1]) if len(probs[0]) > 1 else 0.0
+                else:
+                    # LinearSVC doesn't have predict_proba — use decision_function
+                    decision = email_model['pipeline'].decision_function([cleaned])
+                    # Convert to probability-like score using sigmoid
+                    text_prob = 1.0 / (1.0 + np.exp(-float(decision[0])))
 
         # Combined score
         urgency = email_feats['urgency_score']
@@ -233,6 +365,9 @@ def predict_email(req: EmailRequest):
         if email_pattern:
             signals.append({"type": "sender_domain", "text": email_pattern[0], "severity": "low"})
 
+        if used_transformer:
+            signals.append({"type": "transformer_analysis", "text": "Deep learning text analysis applied", "severity": "info"})
+
         return {
             "score": round(float(combined), 4),
             "label": label,
@@ -240,11 +375,13 @@ def predict_email(req: EmailRequest):
             "highlights": highlights,
             "urgency_score": round(urgency, 4),
             "text_probability": round(text_prob, 4),
+            "transformer_enhanced": used_transformer,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Email prediction failed: {str(e)}")
 
 
+# ── /predict/page ─────────────────────────────────────────────────────
 @app.post("/predict/page")
 def predict_page(req: PageRequest):
     """
@@ -254,7 +391,7 @@ def predict_page(req: PageRequest):
     try:
         from preprocess import extract_url_features
 
-        # 1. URL score
+        # 1. URL score (Transformer-enhanced if available)
         features = extract_url_features(req.url)
         feature_order = [features.get(f, 0) for f in url_model['feature_names']]
         X = np.array([feature_order], dtype=np.float64)
@@ -262,9 +399,18 @@ def predict_page(req: PageRequest):
 
         if hasattr(url_model['pipeline'], 'predict_proba'):
             prob = url_model['pipeline'].predict_proba(X)[0]
-            url_score = float(prob[1]) if len(prob) > 1 else 0.0
+            feature_url_score = float(prob[1]) if len(prob) > 1 else 0.0
         else:
-            url_score = float(url_model['pipeline'].predict(X)[0])
+            feature_url_score = float(url_model['pipeline'].predict(X)[0])
+
+        # Ensemble with Transformer if available
+        url_score = feature_url_score
+        if url_transformer is not None:
+            t_score = _transformer_predict(
+                url_transformer['model'], url_transformer['tokenizer'], req.url, 128
+            )
+            if t_score >= 0:
+                url_score = 0.4 * t_score + 0.6 * feature_url_score
 
         # 2. Form risk signals
         form_score = 0.0
@@ -373,12 +519,14 @@ def predict_page(req: PageRequest):
             },
             "signals": form_signals + iframe_signals + dom_signals + js_signals_out,
             "redirect_chain_length": len(req.redirect_chain),
+            "transformer_enhanced": url_transformer is not None,
         }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Page prediction failed: {str(e)}")
 
 
+# ── /retrain ──────────────────────────────────────────────────────────
 @app.post("/retrain")
 def retrain_endpoint():
     try:
@@ -412,4 +560,4 @@ def retrain_endpoint():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8001)))

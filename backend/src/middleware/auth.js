@@ -38,8 +38,19 @@ export async function authenticate(req, res, next) {
 }
 
 export function optionalAuth(req, res, next) {
-  authenticate(req, res, () => next());
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.split(' ')[1];
+      const decoded = jwt.verify(token, env.JWT_SECRET);
+      req.userId = decoded.id;
+    } catch (err) {
+      // Ignore token errors for optional auth
+    }
+  }
+  next();
 }
+
 
 export function authenticateRefreshToken(req, res, next) {
   const token = req.cookies?.refreshToken || req.body?.refreshToken;
