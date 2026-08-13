@@ -45,25 +45,35 @@ def _check_email_impl(subject: str, body: str):
             "Transformer Enhanced": res.get("transformer_enhanced", False),
         }
     except Exception as e:
-        return {"Error": str(e)}
-
-
-# Apply @spaces.GPU decorator if running on ZeroGPU hardware
 if HAS_ZEROGPU:
     @spaces.GPU
-    def check_url(url: str):
-        return _check_url_impl(url)
-
-    @spaces.GPU
-    def check_email(subject: str, body: str):
-        return _check_email_impl(subject, body)
+    def dummy_gpu_task():
+        return "ZeroGPU Connected"
 else:
-    check_url = _check_url_impl
-    check_email = _check_email_impl
+    def dummy_gpu_task():
+        return "Running on CPU"
+
+
+def check_url(url: str):
+    import requests
+    try:
+        res = requests.post("http://127.0.0.1:7860/predict/url", json={"url": url})
+        return res.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def check_email(subject: str, body: str):
+    import requests
+    try:
+        res = requests.post("http://127.0.0.1:7860/predict/email", json={"subject": subject, "body": body})
+        return res.json()
+    except Exception as e:
+        return {"error": str(e)}
 
 
 # Create Gradio UI for manual interactive testing
-with gr.Blocks(title="CyberGuard AI — Threat Detection API") as _demo:
+with gr.Blocks(title="CyberGuard AI — Threat Detection API") as demo:
     gr.Markdown("# 🛡️ CyberGuard AI — Threat Detection Microservice")
     gr.Markdown("FastAPI backend microservice running on Hugging Face Spaces free tier.")
 
@@ -80,10 +90,15 @@ with gr.Blocks(title="CyberGuard AI — Threat Detection API") as _demo:
         email_output = gr.JSON(label="Analysis Results")
         email_button.click(check_email, inputs=[email_subj, email_body], outputs=[email_output])
 
+    with gr.Tab("System Status"):
+        gpu_button = gr.Button("Check GPU Status")
+        gpu_output = gr.Textbox(label="Status")
+        gpu_button.click(dummy_gpu_task, inputs=[], outputs=[gpu_output])
+
     gr.Markdown("### API Endpoints\n- `POST /predict/url` — URL analysis\n- `POST /predict/email` — Email analysis\n- `GET /health` — Health check")
 
 # Mount FastAPI app onto Gradio so REST API endpoints still work
-app = gr.mount_gradio_app(fastapi_app, _demo, path="/ui")
+app = gr.mount_gradio_app(fastapi_app, demo, path="/ui")
 
 if __name__ == "__main__":
     import uvicorn
