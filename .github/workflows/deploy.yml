@@ -103,20 +103,4 @@ jobs:
             echo "HF_TOKEN secret not set. Skipping HF Space sync."
           fi
 
-  # ─── Deploy Frontend to Vercel ──────────────────────
-  deploy-frontend:
-    name: Deploy Frontend
-    needs: test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: cyberguard-ui
-          vercel-args: --prod
+# Vercel deploys natively via its GitHub integration.
