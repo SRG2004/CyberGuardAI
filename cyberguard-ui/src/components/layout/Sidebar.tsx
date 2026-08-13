@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield, Link as LinkIcon, Mail, Globe, ClipboardList,
   AlertTriangle, Puzzle, Settings, User, LogOut,
-  ChevronLeft, ChevronRight, LayoutDashboard, UserCog, Users, AlertOctagon, KeyRound, MessageSquareText, MonitorSmartphone, FileSearch, Link2
+  ChevronLeft, ChevronRight, LayoutDashboard, UserCog, Users, AlertOctagon, KeyRound, MessageSquareText, MonitorSmartphone, FileSearch, Link2, Fingerprint
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -22,6 +22,7 @@ const allNavItems: NavItem[] = [
   { path: '/device-audit', label: 'Device Audit', icon: MonitorSmartphone, roles: ['student', 'admin'] },
   { path: '/file-analyzer', label: 'File Analyzer', icon: FileSearch, roles: ['student', 'admin'] },
   { path: '/unshortener', label: 'URL Tracer', icon: Link2, roles: ['student', 'admin'] },
+  { path: '/header-analyzer', label: 'Header Spoof', icon: Fingerprint, roles: ['student', 'admin'] },
   { path: '/extension', label: 'Extension Manager', icon: Puzzle, roles: ['student'] },
   { path: '/admin', label: 'Admin Panel', icon: UserCog, roles: ['admin'] },
   { path: '/settings', label: 'Settings', icon: Settings, roles: ['student', 'admin'] },

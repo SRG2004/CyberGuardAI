@@ -20,6 +20,7 @@ const SmsScanner = lazy(() => import("./pages/SmsScanner"));
 const DeviceAudit = lazy(() => import("./pages/DeviceAudit"));
 const FileAnalyzer = lazy(() => import("./pages/FileAnalyzer"));
 const UrlUnshortener = lazy(() => import("./pages/UrlUnshortener"));
+const HeaderAnalyzer = lazy(() => import("./pages/HeaderAnalyzer"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const Profile = lazy(() => import("./pages/Profile"));
@@ -94,6 +95,7 @@ const App = () => {
                   <Route path="/device-audit" element={<DeviceAudit />} />
                   <Route path="/file-analyzer" element={<FileAnalyzer />} />
                   <Route path="/unshortener" element={<UrlUnshortener />} />
+                  <Route path="/header-analyzer" element={<HeaderAnalyzer />} />
                   <Route path="/extension" element={<ExtensionManager />} />
                   <Route path="/install" element={<Install />} />
                   <Route path="/settings" element={<SettingsPage />} />
