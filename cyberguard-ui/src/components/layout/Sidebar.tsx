@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield, Link as LinkIcon, Mail, Globe, ClipboardList,
   AlertTriangle, Puzzle, Settings, User, LogOut,
-  ChevronLeft, ChevronRight, LayoutDashboard, UserCog, Users, AlertOctagon, KeyRound, MessageSquareText, MonitorSmartphone, FileSearch, Link2, Fingerprint
+  ChevronLeft, ChevronRight, LayoutDashboard, UserCog, Users, AlertOctagon, KeyRound, MessageSquareText, MonitorSmartphone, FileSearch, Link2, Fingerprint,
+  Activity, Database, Brain
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 
