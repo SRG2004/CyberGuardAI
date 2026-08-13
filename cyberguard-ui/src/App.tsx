@@ -105,7 +105,8 @@ const App = () => {
 
                 {/* Admin-only routes */}
                 <Route element={<ProtectedRoute role="admin" />}>
-                  <Route path="/admin" element={<AdminPanel />} />
+                  <Route path="/admin" element={<Navigate to="/admin/overview" replace />} />
+                  <Route path="/admin/:tab" element={<AdminPanel />} />
                 </Route>
 
                 {/* Role-agnostic fallback if someone with insufficient permissions visits a restricted route */}

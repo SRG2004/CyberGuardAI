@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useParams, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { UserCog, Users, Database, Activity, Brain, Plus, Search, CheckCircle, XCircle, AlertTriangle, ArrowUp } from 'lucide-react';
 import { useAdminStats, useUsers, useChangeUserRole, useToggleUserStatus, useMlHealth, useRetrainModel } from '@/hooks/api/useAdmin';
@@ -8,17 +9,10 @@ import { RiskBadge } from '@/components/ui/RiskBadge';
 import { GlowButton } from '@/components/ui/GlowButton';
 import { toast } from 'sonner';
 
-const tabs = [
-  { id: 'overview', label: 'Overview', icon: Activity },
-  { id: 'queue', label: 'Review Queue', icon: AlertTriangle },
-  { id: 'blocklist', label: 'Blocklist', icon: Database },
-  { id: 'users', label: 'Users', icon: Users },
-  { id: 'api', label: 'API Health', icon: Activity },
-  { id: 'model', label: 'Model', icon: Brain },
-];
-
 export default function AdminPanel() {
-  const [activeTab, setActiveTab] = useState('overview');
+  const { tab } = useParams<{ tab: string }>();
+  const activeTab = tab || 'overview';
+  
   const [userPage, setUserPage] = useState(1);
   const [newDomain, setNewDomain] = useState('');
   const [newReason, setNewReason] = useState('');
@@ -87,18 +81,9 @@ export default function AdminPanel() {
     <div className="max-w-6xl mx-auto space-y-6">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
         <h2 className="font-display text-xl font-bold text-foreground flex items-center gap-2">
-          <UserCog className="w-5 h-5 text-primary" /> Admin Panel
+          <UserCog className="w-5 h-5 text-primary" /> Admin Panel: {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
         </h2>
       </motion.div>
-
-      {/* Tabs */}
-      <div className="flex gap-1 bg-muted/30 rounded-lg p-1 w-fit">
-        {tabs.map(t => (
-          <button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex items-center gap-2 px-4 py-2 text-xs rounded-md font-medium transition-all ${activeTab === t.id ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
-            <t.icon className="w-3.5 h-3.5" /> {t.label}
-          </button>
-        ))}
-      </div>
 
       {/* Overview Tab */}
       {activeTab === 'overview' && (
