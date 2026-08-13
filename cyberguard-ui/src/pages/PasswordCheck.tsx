@@ -72,8 +72,7 @@ export default function PasswordCheck() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter a password..."
-                  className="w-full h-12 pl-10 pr-4 rounded-xl bg-muted/50 border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-mono"
+                  className="w-full h-12 pl-10 pr-4 rounded-xl bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-mono"
                   disabled={loading}
                 />
               </div>
