@@ -15,6 +15,7 @@ import adminRoutes from './routes/admin.routes.js';
 import extensionRoutes from './routes/extension.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
+import gamificationRoutes from './routes/gamification.routes.js';
 import logger from './utils/logger.js';
 
 const app = express();
@@ -65,6 +66,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/extension', extensionRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/gamification', gamificationRoutes);
 
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));

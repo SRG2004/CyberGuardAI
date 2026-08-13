@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { User, Mail, Shield, Calendar, BarChart3, Edit } from 'lucide-react';
+import { User, Mail, Shield, Calendar, BarChart3, Edit, Trophy, Award, Target, ShieldCheck, MonitorSmartphone } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { GlowButton } from '@/components/ui/GlowButton';
 
@@ -34,6 +34,51 @@ export default function Profile() {
           </div>
           <GlowButton variant="ghost" size="sm"><Edit className="w-4 h-4" /> Edit</GlowButton>
         </div>
+      </motion.div>
+
+      {/* Gamification / Cyber Training */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="font-display font-semibold text-foreground text-sm flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-warning" /> Cyber Training Progress
+          </h3>
+          <div className="text-right">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Level {user.level || 1}</p>
+            <p className="text-xl font-display font-bold text-foreground">{user.points || 0} <span className="text-xs text-primary font-medium">PTS</span></p>
+          </div>
+        </div>
+
+        {/* Progress Bar (Example: 100 points per level) */}
+        <div className="w-full bg-muted/30 rounded-full h-2.5 mb-6 overflow-hidden border border-border">
+          <div className="bg-primary h-2.5 rounded-full" style={{ width: `${((user.points || 0) % 100)}%` }}></div>
+        </div>
+        <p className="text-[10px] text-muted-foreground text-right mt-1 mb-6">
+          {100 - ((user.points || 0) % 100)} points to Level {(user.level || 1) + 1}
+        </p>
+
+        <h4 className="text-xs font-semibold text-foreground mb-3">Earned Badges</h4>
+        {user.badges && user.badges.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {user.badges.map(b => (
+              <div key={b.id} className="p-3 rounded-lg border border-primary/20 bg-primary/5 flex flex-col items-center text-center gap-2">
+                {b.icon === 'ShieldCheck' && <ShieldCheck className="w-6 h-6 text-primary" />}
+                {b.icon === 'Target' && <Target className="w-6 h-6 text-destructive" />}
+                {b.icon === 'Award' && <Award className="w-6 h-6 text-warning" />}
+                {b.icon === 'MonitorSmartphone' && <MonitorSmartphone className="w-6 h-6 text-safe" />}
+                {!['ShieldCheck', 'Target', 'Award', 'MonitorSmartphone'].includes(b.icon) && <Shield className="w-6 h-6 text-primary" />}
+                <div>
+                  <p className="text-[10px] font-bold text-foreground">{b.name}</p>
+                  <p className="text-[9px] text-muted-foreground">{new Date(b.earnedAt).toLocaleDateString()}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="p-6 rounded-lg border border-dashed border-border flex flex-col items-center text-center">
+            <Trophy className="w-8 h-8 text-muted-foreground opacity-20 mb-2" />
+            <p className="text-xs text-muted-foreground">No badges earned yet. Start scanning to earn points!</p>
+          </div>
+        )}
       </motion.div>
 
       {/* Account Info */}

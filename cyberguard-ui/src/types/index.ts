@@ -6,6 +6,9 @@ export interface User {
   isActive: boolean;
   createdAt: string;
   lastActive: string;
+  points?: number;
+  level?: number;
+  badges?: Array<{ id: string; name: string; earnedAt: string; icon: string }>;
 }
 
 export interface AuthResponse {

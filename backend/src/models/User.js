@@ -14,6 +14,14 @@ const userSchema = new mongoose.Schema({
   refreshToken: { type: String, default: null },
   resetToken: { type: String, default: null },
   resetTokenExpiry: { type: Date, default: null },
+  points: { type: Number, default: 0 },
+  level: { type: Number, default: 1 },
+  badges: [{ 
+    id: String,
+    name: String,
+    earnedAt: { type: Date, default: Date.now },
+    icon: String
+  }],
 }, { timestamps: true });
 
 userSchema.index({ role: 1 });
