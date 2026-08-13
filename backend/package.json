@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "lint": "eslint src/",
     "test": "node --test src/**/*.test.js"
   },
   "dependencies": {
