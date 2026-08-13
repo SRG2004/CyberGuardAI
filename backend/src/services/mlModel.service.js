@@ -1,18 +1,22 @@
-import axios from 'axios';
+import { Client } from '@gradio/client';
 import env from '../config/env.js';
 import logger from '../utils/logger.js';
 
+let hfClient = null;
+
 async function getClient() {
-  return axios.create({
-    baseURL: env.ML_SERVICE_URL,
-    timeout: 120000,  // 120s — HF Spaces cold starts can take 60-90s
-  });
+  if (!hfClient) {
+    logger.info(`Connecting to Gradio Client at ${env.ML_SERVICE_URL}...`);
+    hfClient = await Client.connect(env.ML_SERVICE_URL);
+  }
+  return hfClient;
 }
 
 export async function predictUrl(url) {
   try {
     const client = await getClient();
-    const { data } = await client.post('/predict/url', { url });
+    const result = await client.predict('/predict_url', [url]);
+    const data = result.data[0];
     return { score: data.score, label: data.label, features: data.features, confidence: data.confidence };
   } catch (err) {
     logger.error('ML URL prediction failed:', err.message);
@@ -23,7 +27,8 @@ export async function predictUrl(url) {
 export async function predictEmail(subject, body) {
   try {
     const client = await getClient();
-    const { data } = await client.post('/predict/email', { subject, body });
+    const result = await client.predict('/predict_email', [subject, body]);
+    const data = result.data[0];
     return { score: data.score, label: data.label, signals: data.signals || [], highlights: data.highlights || [] };
   } catch (err) {
     logger.error('ML Email prediction failed:', err.message);
@@ -34,19 +39,15 @@ export async function predictEmail(subject, body) {
 export async function getHealth() {
   try {
     const client = await getClient();
-    const { data } = await client.get('/health');
-    return data;
+    const result = await client.predict('/health', []);
+    return result.data[0];
   } catch (err) {
     return { status: 'error', model_loaded: false, accuracy: 0 };
   }
 }
 
 export async function retrain() {
-  try {
-    const client = await getClient();
-    const { data } = await client.post('/retrain');
-    return data;
-  } catch (err) {
-    throw new Error(`Retraining failed: ${err.message}`);
-  }
+  // Gradio app currently doesn't implement a retrain endpoint natively
+  // Returning dummy data
+  return { status: "not_implemented" };
 }
