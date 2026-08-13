@@ -1,8 +1,9 @@
-import { Bell, Search, Shield, Puzzle } from 'lucide-react';
+import { Bell, Search, Shield, Puzzle, Moon, Sun } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useTheme } from './theme-provider';
 
 const pageTitles: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -31,6 +32,7 @@ export function Topbar() {
   const userRole = useAuthStore((s) => s.user?.role);
   const [hasUnread, setHasUnread] = useState(true);
   const title = pageTitles[location.pathname] || 'CyberGuard AI';
+  const { theme, setTheme } = useTheme();
 
   const handleNotifications = () => {
     if (hasUnread) {
@@ -112,6 +114,14 @@ export function Topbar() {
         >
           <Bell className="w-5 h-5" />
           {hasUnread && <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-destructive animate-pulse" />}
+        </button>
+
+        {/* Theme Toggle */}
+        <button
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+        >
+          {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </button>
 
         {/* Avatar */}
