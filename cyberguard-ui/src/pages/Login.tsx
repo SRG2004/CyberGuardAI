@@ -205,6 +205,27 @@ export default function Login() {
             </form>
 
             <div className="text-center">
+              {!isRegister && (
+                <div className="mb-4">
+                  <p className="text-xs text-muted-foreground mb-2">Demo Accounts</p>
+                  <div className="flex justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => { setEmail('admin@example.com'); setPassword('admin123'); }}
+                      className="text-xs px-3 py-1.5 rounded bg-muted/30 hover:bg-muted/50 border border-border text-foreground transition-colors"
+                    >
+                      Admin
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setEmail('student@example.com'); setPassword('student123'); }}
+                      className="text-xs px-3 py-1.5 rounded bg-muted/30 hover:bg-muted/50 border border-border text-foreground transition-colors"
+                    >
+                      Student
+                    </button>
+                  </div>
+                </div>
+              )}
               <button
                 type="button"
                 onClick={() => { setIsRegister(v => !v); setError(null); }}
