@@ -45,6 +45,8 @@ def _check_email_impl(subject: str, body: str):
             "Transformer Enhanced": res.get("transformer_enhanced", False),
         }
     except Exception as e:
+        return {"Error": str(e)}
+
 if HAS_ZEROGPU:
     @spaces.GPU
     def dummy_gpu_task():
