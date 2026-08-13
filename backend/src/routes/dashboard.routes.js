@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { authenticate } from '../middleware/auth.js';
 import Threat from '../models/Threat.js';
 import Scan from '../models/Scan.js';
-import Blocklist from '../models/Blocklist.js';
 
 const router = Router();
 
