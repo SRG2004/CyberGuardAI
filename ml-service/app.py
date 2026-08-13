@@ -6,12 +6,15 @@ Compatible with both CPU Basic and ZeroGPU hardware on HF Spaces.
 
 import gradio as gr
 
-# Try to import spaces module for ZeroGPU compatibility
 try:
     import spaces
-    HAS_ZEROGPU = True
 except ImportError:
-    HAS_ZEROGPU = False
+    class spaces:
+        @staticmethod
+        def GPU(func=None, **kwargs):
+            if func is None:
+                return lambda f: f
+            return func
 
 from main import app as fastapi_app
 
@@ -47,13 +50,9 @@ def _check_email_impl(subject: str, body: str):
     except Exception as e:
         return {"Error": str(e)}
 
-if HAS_ZEROGPU:
-    @spaces.GPU
-    def dummy_gpu_task():
-        return "ZeroGPU Connected"
-else:
-    def dummy_gpu_task():
-        return "Running on CPU"
+@spaces.GPU
+def dummy_gpu_task():
+    return "ZeroGPU Connected"
 
 
 def check_url(url: str):
