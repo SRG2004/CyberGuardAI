@@ -42,8 +42,8 @@ router.get('/', authenticate, paginationValidation, async (req, res) => {
 });
 
 // GET /live - last 50 threats
-router.get('/live', async (req, res) => {
-  const threats = await getLiveThreats(50);
+router.get('/live', authenticate, async (req, res) => {
+  const threats = await getLiveThreats(50, req.user);
   res.json({ success: true, data: threats });
 });
 
@@ -89,9 +89,9 @@ router.post('/verify/:threatId', authenticate, isAdmin, async (req, res) => {
 });
 
 // GET /stats/today - today stats
-router.get('/stats/today', async (req, res) => {
+router.get('/stats/today', authenticate, async (req, res) => {
   try {
-    const stats = await getTodayStats();
+    const stats = await getTodayStats(req.user);
     res.json({ success: true, data: stats });
   } catch (err) {
     logger.error('Error fetching today stats:', err.message);
@@ -100,9 +100,9 @@ router.get('/stats/today', async (req, res) => {
 });
 
 // GET /stats/timeline - 24h hourly breakdown
-router.get('/stats/timeline', async (req, res) => {
+router.get('/stats/timeline', authenticate, async (req, res) => {
   try {
-    const timeline = await getTimelineStats();
+    const timeline = await getTimelineStats(req.user);
     res.json({ success: true, data: timeline });
   } catch (err) {
     logger.error('Error fetching timeline stats:', err.message);
@@ -111,9 +111,9 @@ router.get('/stats/timeline', async (req, res) => {
 });
 
 // GET /stats/radar - radar chart data
-router.get('/stats/radar', async (req, res) => {
+router.get('/stats/radar', authenticate, async (req, res) => {
   try {
-    const data = await getRadarData();
+    const data = await getRadarData(req.user);
     res.json({ success: true, data });
   } catch (err) {
     logger.error('Error fetching radar data:', err.message);

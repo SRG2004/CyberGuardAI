@@ -2,8 +2,9 @@ import Threat from '../models/Threat.js';
 import { getIo } from '../config/socket.js';
 import logger from '../utils/logger.js';
 
-export async function getLiveThreats(limit = 50) {
-  return Threat.find({})
+export async function getLiveThreats(limit = 50, user = null) {
+  const filter = user && user.role !== 'admin' ? { detectedBy: user._id } : {};
+  return Threat.find(filter)
     .sort({ createdAt: -1 })
     .limit(limit)
     .populate('detectedBy', 'displayName email')
@@ -27,14 +28,16 @@ export function emitThreatVerified(threatId, verdict) {
   }
 }
 
-export async function getTodayStats() {
+export async function getTodayStats(user = null) {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   const end = new Date(start);
   end.setDate(end.getDate() + 1);
 
+  const filter = user && user.role !== 'admin' ? { detectedBy: user._id } : {};
+
   const aggregation = await Threat.aggregate([
-    { $match: { createdAt: { $gte: start, $lt: end } } },
+    { $match: { createdAt: { $gte: start, $lt: end }, ...filter } },
     {
       $group: {
         _id: '$type',
@@ -45,9 +48,9 @@ export async function getTodayStats() {
     },
   ]);
 
-  const total = await Threat.countDocuments({ createdAt: { $gte: start, $lt: end } });
+  const total = await Threat.countDocuments({ createdAt: { $gte: start, $lt: end }, ...filter });
   const avgScore = await Threat.aggregate([
-    { $match: { createdAt: { $gte: start, $lt: end } } },
+    { $match: { createdAt: { $gte: start, $lt: end }, ...filter } },
     { $group: { _id: null, avg: { $avg: '$riskScore' } } },
   ]);
 
@@ -58,12 +61,14 @@ export async function getTodayStats() {
   };
 }
 
-export async function getTimelineStats() {
+export async function getTimelineStats(user = null) {
   const now = new Date();
   const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
+  const filter = user && user.role !== 'admin' ? { detectedBy: user._id } : {};
+
   return Threat.aggregate([
-    { $match: { createdAt: { $gte: dayAgo } } },
+    { $match: { createdAt: { $gte: dayAgo }, ...filter } },
     {
       $group: {
         _id: { $dateToString: { format: '%Y-%m-%dT%H:00:00', date: '$createdAt' } },
@@ -77,14 +82,16 @@ export async function getTimelineStats() {
   ]);
 }
 
-export async function getRadarData() {
+export async function getRadarData(user = null) {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   const end = new Date(start);
   end.setDate(end.getDate() + 1);
 
+  const filter = user && user.role !== 'admin' ? { detectedBy: user._id } : {};
+
   const result = await Threat.aggregate([
-    { $match: { createdAt: { $gte: start, $lt: end } } },
+    { $match: { createdAt: { $gte: start, $lt: end }, ...filter } },
     { $group: { _id: '$type', count: { $sum: 1 } } },
   ]);
 

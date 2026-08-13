@@ -12,12 +12,12 @@ type NavItem = { path: string; label: string; icon: typeof Shield; roles: string
 
 const allNavItems: NavItem[] = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['student', 'admin'] },
-  { path: '/scanner', label: 'Link Scanner', icon: LinkIcon, roles: ['student', 'admin'] },
-  { path: '/email-detector', label: 'Email Detector', icon: Mail, roles: ['student', 'admin'] },
-  { path: '/threat-feed', label: 'Threat Feed', icon: Globe, roles: ['student', 'admin'] },
-  { path: '/scan-history', label: 'Scan History', icon: ClipboardList, roles: ['student', 'admin'] },
-  { path: '/report', label: 'Anonymous Report', icon: AlertTriangle, roles: ['student', 'admin'] },
-  { path: '/extension', label: 'Extension Manager', icon: Puzzle, roles: ['student', 'admin'] },
+  { path: '/scanner', label: 'Link Scanner', icon: LinkIcon, roles: ['student'] },
+  { path: '/email-detector', label: 'Email Detector', icon: Mail, roles: ['student'] },
+  { path: '/threat-feed', label: 'Threat Feed', icon: Globe, roles: ['admin'] },
+  { path: '/scan-history', label: 'Scan History', icon: ClipboardList, roles: ['student'] },
+  { path: '/report', label: 'Anonymous Report', icon: AlertTriangle, roles: ['student'] },
+  { path: '/extension', label: 'Extension Manager', icon: Puzzle, roles: ['student'] },
   { path: '/admin', label: 'Admin Panel', icon: UserCog, roles: ['admin'] },
   { path: '/settings', label: 'Settings', icon: Settings, roles: ['student', 'admin'] },
   { path: '/profile', label: 'Profile', icon: User, roles: ['student', 'admin'] },

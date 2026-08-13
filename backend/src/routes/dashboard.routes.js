@@ -1,30 +1,36 @@
 import { Router } from 'express';
+import { authenticate } from '../middleware/auth.js';
 import Threat from '../models/Threat.js';
 import Scan from '../models/Scan.js';
 import Blocklist from '../models/Blocklist.js';
 
 const router = Router();
 
-router.get('/summary', async (req, res) => {
+router.get('/summary', authenticate, async (req, res) => {
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
 
+  const queryFilter = req.user.role === 'admin' ? {} : { detectedBy: req.userId };
+  const scanFilter = req.user.role === 'admin' ? {} : { userId: req.userId };
+
   const [threatsToday, scansToday, emailsToday, totalThreats] = await Promise.all([
-    Threat.countDocuments({ createdAt: { $gte: startOfDay } }),
-    Scan.countDocuments({ createdAt: { $gte: startOfDay }, inputType: 'url' }),
-    Scan.countDocuments({ createdAt: { $gte: startOfDay }, inputType: 'email' }),
-    Threat.countDocuments(),
+    Threat.countDocuments({ createdAt: { $gte: startOfDay }, ...queryFilter }),
+    Scan.countDocuments({ createdAt: { $gte: startOfDay }, inputType: 'url', ...scanFilter }),
+    Scan.countDocuments({ createdAt: { $gte: startOfDay }, inputType: 'email', ...scanFilter }),
+    Threat.countDocuments(queryFilter),
   ]);
 
-  const recentMalicious = await Threat.countDocuments({ createdAt: { $gte: startOfDay }, verdict: 'malicious' });
+  const recentMalicious = await Threat.countDocuments({ createdAt: { $gte: startOfDay }, verdict: 'malicious', ...queryFilter });
   const riskLevel = recentMalicious > 50 ? 'HIGH' : recentMalicious > 20 ? 'MODERATE' : 'LOW';
 
   res.json({ success: true, data: { threatsToday, scansToday, emailsToday, totalThreats, riskLevel } });
 });
 
-router.get('/top-domains', async (req, res) => {
+router.get('/top-domains', authenticate, async (req, res) => {
+  const queryFilter = req.user.role === 'admin' ? {} : { detectedBy: req.userId };
+
   const domains = await Threat.aggregate([
-    { $match: { url: { $ne: null }, verdict: { $in: ['malicious', 'suspicious'] } } },
+    { $match: { url: { $ne: null }, verdict: { $in: ['malicious', 'suspicious'] }, ...queryFilter } },
     { $group: { _id: '$url', avgScore: { $avg: '$riskScore' }, count: { $sum: 1 }, lastSeen: { $max: '$createdAt' } } },
     { $sort: { avgScore: -1 } },
     { $limit: 10 },
@@ -34,9 +40,11 @@ router.get('/top-domains', async (req, res) => {
   res.json({ success: true, data: domains });
 });
 
-router.get('/category-distribution', async (req, res) => {
+router.get('/category-distribution', authenticate, async (req, res) => {
+  const queryFilter = req.user.role === 'admin' ? {} : { detectedBy: req.userId };
+
   const dist = await Threat.aggregate([
-    { $match: { createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } },
+    { $match: { createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }, ...queryFilter } },
     { $group: { _id: '$type', count: { $sum: 1 } } },
     { $sort: { count: -1 } }
   ]);
