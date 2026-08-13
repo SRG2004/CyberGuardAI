@@ -30,7 +30,7 @@ router.post('/', reportRateLimit, upload.single('evidence'), reportValidation, a
   if (url) {
     try {
       const mlResult = await predictUrl(url);
-      if (mlResult && mlResult.score) {
+      if (mlResult && mlResult.score !== undefined) {
         report.aiScore = Math.round(mlResult.score * 100);
         report.aiVerdict = mlResult.label;
         await report.save();
@@ -68,8 +68,8 @@ router.get('/', authenticate, isAdmin, paginationValidation, async (req, res) =>
   const skip = (page - 1) * limit;
 
   const [reports, total] = await Promise.all([
-    Report.find().sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
-    Report.countDocuments(),
+    Report.find({ status: 'pending' }).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    Report.countDocuments({ status: 'pending' }),
   ]);
 
   res.json({ success: true, data: reports, meta: { page, total, limit } });

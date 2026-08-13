@@ -144,7 +144,7 @@ export default function AdminPanel() {
                 </div>
                 <p className="text-sm font-mono text-foreground">{r.url || 'No URL provided'}</p>
                 <div className="flex items-center justify-between mt-3">
-                  <span className="text-xs text-muted-foreground">AI: <span className={(r.aiScore || 0) >= 0.7 ? 'text-destructive' : 'text-warning'}>{Math.round(((r.aiScore || 0) * 100))}% risk</span></span>
+                  <span className="text-xs text-muted-foreground">AI: <span className={(r.aiScore || 0) >= 70 ? 'text-destructive' : 'text-warning'}>{r.aiScore || 0}% risk</span></span>
                   <div className="flex gap-1.5" onClick={e => e.stopPropagation()}>
                     <GlowButton size="sm" variant="ghost" onClick={() => handleReportAction(r._id, 'dismissed')}>
                       <XCircle className="w-3 h-3" />
@@ -175,15 +175,12 @@ export default function AdminPanel() {
                         <div><p className="text-[10px] text-muted-foreground">Report ID</p><p className="text-xs font-mono text-foreground">{r.anonymousId}</p></div>
                         <div><p className="text-[10px] text-muted-foreground">URL</p><p className="text-xs font-mono text-foreground break-all">{r.url || 'N/A'}</p></div>
                         <div><p className="text-[10px] text-muted-foreground">Description</p><p className="text-xs text-foreground">{r.description || 'N/A'}</p></div>
-                        <div><p className="text-[10px] text-muted-foreground">AI Score</p><p className={`stat-number text-xl ${(r.aiScore || 0) >= 0.7 ? 'text-destructive' : 'text-warning'}`}>{Math.round(((r.aiScore || 0) * 100))}%</p></div>
+                        <div><p className="text-[10px] text-muted-foreground">AI Score</p><p className={`stat-number text-xl ${(r.aiScore || 0) >= 70 ? 'text-destructive' : 'text-warning'}`}>{r.aiScore || 0}%</p></div>
                         <div><p className="text-[10px] text-muted-foreground">Status</p><p className="text-xs capitalize text-foreground">{r.status.replace('_', ' ')}</p></div>
                         <textarea value={reportNotes} onChange={e => setReportNotes(e.target.value)} placeholder="Add notes..." rows={3} className="w-full px-3 py-2 rounded-lg bg-muted/50 border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 resize-none" />
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 gap-2">
                           <GlowButton size="sm" className="w-full" onClick={() => handleReportAction(r._id, 'confirmed')}>
                             <CheckCircle className="w-3 h-3" /> Confirm
-                          </GlowButton>
-                          <GlowButton size="sm" variant="ghost" className="w-full" onClick={() => handleReportAction(r._id, 'under_review')}>
-                            <ArrowUp className="w-3 h-3" /> Escalate
                           </GlowButton>
                         </div>
                       </div>
