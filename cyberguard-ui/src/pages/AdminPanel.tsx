@@ -292,18 +292,18 @@ export default function AdminPanel() {
       {activeTab === 'api' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[
-            { name: 'ML Inference', ...((mlHealth?.model_loaded ? { status: 'Online', latency: 'Loaded' } : { status: 'Offline', latency: 'N/A' } as const)) },
-            { name: 'Backend', status: 'Online', latency: `${Math.round((healthQuery.data as any)?.uptime || 0)}s uptime` },
+            { name: 'ML Inference', status: mlHealth?.model_loaded ? 'Online' : 'Offline', latency: mlHealth?.model_loaded ? 'Loaded' : 'N/A' },
+            { name: 'Backend', status: 'Online', latency: `${Math.round(((healthQuery.data as Record<string, unknown>)?.uptime as number) || 0)}s uptime` },
           ].map((api, i) => (
             <div key={i} className="glass-card p-5">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-medium text-foreground">{api.name}</h4>
-                <span className={`flex items-center gap-1.5 text-[10px] font-bold ${((api as any).status === 'Online') ? 'text-safe' : 'text-warning'}`}>
-                  <span className={`w-2 h-2 rounded-full ${((api as any).status === 'Online') ? 'bg-safe' : 'bg-warning'}`} /> {(api as any).status}
+                <span className={`flex items-center gap-1.5 text-[10px] font-bold ${api.status === 'Online' ? 'text-safe' : 'text-warning'}`}>
+                  <span className={`w-2 h-2 rounded-full ${api.status === 'Online' ? 'bg-safe' : 'bg-warning'}`} /> {api.status}
                 </span>
               </div>
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Latency: <span className="text-foreground">{(api as any).latency}</span></span>
+                <span>Latency: <span className="text-foreground">{api.latency}</span></span>
               </div>
             </div>
           ))}
