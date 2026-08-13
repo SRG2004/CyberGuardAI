@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 
 const reportTypes = ['Phishing Link', 'Malicious Email', 'Fake Website', 'Other'];
 
-export default function AnonymousReport() {
+export default function ThreatHunter() {
   const [type, setType] = useState(reportTypes[0]);
   const [url, setUrl] = useState('');
   const [description, setDescription] = useState('');
@@ -53,11 +53,7 @@ export default function AnonymousReport() {
           </div>
           <h2 className="font-display text-2xl font-bold text-foreground mb-2">Report Submitted</h2>
           <p className="text-sm text-muted-foreground mb-4">Thank you for helping keep the community safe.</p>
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/50 border border-border">
-            <Hash className="w-4 h-4 text-primary" />
-            <span className="font-mono text-sm text-primary">{submittedId}</span>
-          </div>
-          <p className="text-[10px] text-muted-foreground mt-3">Save this ID to track your report status</p>
+          <p className="text-[10px] text-muted-foreground mt-3">You can view the status of this report in your Profile.</p>
           <GlowButton variant="ghost" className="mt-6" onClick={() => setSubmittedId(null)}>Submit Another</GlowButton>
         </motion.div>
       </div>
@@ -68,7 +64,7 @@ export default function AnonymousReport() {
     <div className="max-w-lg mx-auto">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-8">
         <h2 className="font-display text-xl font-bold text-foreground flex items-center gap-2 mb-6">
-          <AlertTriangle className="w-5 h-5 text-warning" /> Anonymous Report
+          <AlertTriangle className="w-5 h-5 text-warning" /> Submit a Threat
         </h2>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
@@ -106,7 +102,7 @@ export default function AnonymousReport() {
             </p>
           </div>
           <GlowButton type="submit" className="w-full" size="lg" disabled={submitReport.isPending}>
-            {submitReport.isPending ? 'Submitting...' : 'Submit Anonymous Report'}
+            {submitReport.isPending ? 'Submitting...' : 'Submit Threat'}
           </GlowButton>
         </form>
       </motion.div>

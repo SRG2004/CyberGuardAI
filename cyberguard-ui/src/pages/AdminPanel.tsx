@@ -138,7 +138,7 @@ export default function AdminPanel() {
                 className={`glass-card p-4 cursor-pointer transition-all hover:-translate-y-0.5 ${selectedReport === r._id ? 'border-primary/50 shadow-glow-cyan' : ''}`}
               >
                 <div className="flex items-center gap-3 mb-2">
-                  <span className="text-xs font-mono text-muted-foreground">{r.anonymousId}</span>
+                  <span className="text-xs font-mono text-muted-foreground">{r.submittedBy?.displayName || 'Unknown User'}</span>
                   <RiskBadge type={normalizedType} />
                   <span className="text-xs text-muted-foreground ml-auto">{new Date(r.createdAt).toLocaleString()}</span>
                 </div>
@@ -172,7 +172,7 @@ export default function AdminPanel() {
                     if (!r) return <p className="text-xs text-muted-foreground">Report not found</p>;
                     return (
                       <div className="space-y-3">
-                        <div><p className="text-[10px] text-muted-foreground">Report ID</p><p className="text-xs font-mono text-foreground">{r.anonymousId}</p></div>
+                        <div><p className="text-[10px] text-muted-foreground">Report ID / User</p><p className="text-xs font-mono text-foreground">{r.submittedBy?.displayName || r._id}</p></div>
                         <div><p className="text-[10px] text-muted-foreground">URL</p><p className="text-xs font-mono text-foreground break-all">{r.url || 'N/A'}</p></div>
                         <div><p className="text-[10px] text-muted-foreground">Description</p><p className="text-xs text-foreground">{r.description || 'N/A'}</p></div>
                         <div><p className="text-[10px] text-muted-foreground">AI Score</p><p className={`stat-number text-xl ${(r.aiScore || 0) >= 70 ? 'text-destructive' : 'text-warning'}`}>{r.aiScore || 0}%</p></div>

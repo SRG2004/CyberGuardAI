@@ -6,7 +6,7 @@ import { reportValidation, paginationValidation } from '../middleware/validate.j
 import { reportRateLimit } from '../middleware/rateLimit.js';
 import Report from '../models/Report.js';
 import Threat from '../models/Threat.js';
-import { generateAnonId } from '../utils/anonId.js';
+
 import { predictUrl } from '../services/mlModel.service.js';
 import logger from '../utils/logger.js';
 
@@ -14,11 +14,11 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 
 
 const router = Router();
 
-router.post('/', reportRateLimit, upload.single('evidence'), reportValidation, async (req, res) => {
+router.post('/', reportRateLimit, authenticate, upload.single('evidence'), reportValidation, async (req, res) => {
   const { type, url, description } = req.body;
 
   const report = await Report.create({
-    anonymousId: generateAnonId(),
+    submittedBy: req.userId,
     type: type || 'other',
     url: url || null,
     description: description || null,
@@ -51,15 +51,12 @@ router.post('/', reportRateLimit, upload.single('evidence'), reportValidation, a
     }
   }
 
-  res.status(201).json({ success: true, data: { reportId: report._id, anonymousId: report.anonymousId } });
+  res.status(201).json({ success: true, data: { reportId: report._id } });
 });
 
-router.get('/track/:anonymousId', async (req, res) => {
-  const report = await Report.findOne({ anonymousId: req.params.anonymousId }).lean();
-  if (!report) {
-    return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Report not found.' } });
-  }
-  res.json({ success: true, data: report });
+router.get('/my-reports', authenticate, async (req, res) => {
+  const reports = await Report.find({ submittedBy: req.userId }).sort({ createdAt: -1 }).lean();
+  res.json({ success: true, data: reports });
 });
 
 router.get('/', authenticate, isAdmin, paginationValidation, async (req, res) => {
@@ -68,7 +65,7 @@ router.get('/', authenticate, isAdmin, paginationValidation, async (req, res) =>
   const skip = (page - 1) * limit;
 
   const [reports, total] = await Promise.all([
-    Report.find({ status: 'pending' }).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    Report.find({ status: 'pending' }).populate('submittedBy', 'displayName email').sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
     Report.countDocuments({ status: 'pending' }),
   ]);
 

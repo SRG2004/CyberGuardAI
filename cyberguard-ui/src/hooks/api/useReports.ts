@@ -8,15 +8,13 @@ export function useSubmitReport() {
   });
 }
 
-export function useReportTrack(anonId: string | undefined) {
+export function useMyReports() {
   return useQuery({
-    queryKey: ['report', 'track', anonId],
+    queryKey: ['reports', 'my'],
     queryFn: async () => {
-      if (!anonId) throw new Error('No anonId');
-      const res = await api.get<Report>(`/api/reports/track/${anonId}`);
+      const res = await api.get<Report[]>(`/api/reports/my-reports`);
       return res.data;
     },
-    enabled: !!anonId,
   });
 }
 

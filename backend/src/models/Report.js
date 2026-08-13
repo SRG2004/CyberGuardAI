@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const reportSchema = new mongoose.Schema({
-  anonymousId: { type: String, required: true, unique: true },
+  submittedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   type: { type: String, enum: ['phishing_link', 'malicious_email', 'fake_website', 'other'], default: 'other' },
   url: { type: String, default: null },
   description: { type: String, default: null },

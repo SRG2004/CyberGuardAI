@@ -16,7 +16,7 @@ const allNavItems: NavItem[] = [
   { path: '/email-detector', label: 'Email Detector', icon: Mail, roles: ['student'] },
   { path: '/threat-feed', label: 'Threat Feed', icon: Globe, roles: ['admin'] },
   { path: '/scan-history', label: 'Scan History', icon: ClipboardList, roles: ['student'] },
-  { path: '/report', label: 'Anonymous Report', icon: AlertTriangle, roles: ['student'] },
+  { path: '/report', label: 'Threat Hunter', icon: AlertOctagon, roles: ['student'] },
   { path: '/extension', label: 'Extension Manager', icon: Puzzle, roles: ['student'] },
   { path: '/admin', label: 'Admin Panel', icon: UserCog, roles: ['admin'] },
   { path: '/settings', label: 'Settings', icon: Settings, roles: ['student', 'admin'] },

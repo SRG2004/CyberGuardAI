@@ -13,7 +13,7 @@ const LinkScanner = lazy(() => import("./pages/LinkScanner"));
 const EmailPhishingDetector = lazy(() => import("./pages/EmailPhishingDetector"));
 const ThreatFeed = lazy(() => import("./pages/ThreatFeed"));
 const ScanHistory = lazy(() => import("./pages/ScanHistory"));
-const AnonymousReport = lazy(() => import("./pages/AnonymousReport"));
+const ThreatHunter = lazy(() => import("./pages/ThreatHunter"));
 const ExtensionManager = lazy(() => import("./pages/ExtensionManager"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
@@ -83,7 +83,7 @@ const App = () => {
                   <Route path="/email-detector" element={<EmailPhishingDetector />} />
                   <Route path="/threat-feed" element={<ThreatFeed />} />
                   <Route path="/scan-history" element={<ScanHistory />} />
-                  <Route path="/report" element={<AnonymousReport />} />
+                  <Route path="/report" element={<ThreatHunter />} />
                   <Route path="/extension" element={<ExtensionManager />} />
                   <Route path="/install" element={<Install />} />
                   <Route path="/settings" element={<SettingsPage />} />

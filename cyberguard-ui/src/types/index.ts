@@ -38,7 +38,7 @@ export interface ScanHistoryItem {
 
 export interface Report {
   _id: string;
-  anonymousId: string;
+  submittedBy?: { _id: string; displayName: string; email: string };
   type: string;
   url?: string;
   description?: string;
