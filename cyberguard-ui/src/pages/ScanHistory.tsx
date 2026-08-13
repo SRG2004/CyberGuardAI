@@ -14,9 +14,10 @@ const riskColor = (score: number) => {
 
 export default function ScanHistory() {
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useScanHistory(page, 20) as unknown as {
+  const { data, isLoading, isError } = useScanHistory(page, 20) as unknown as {
     data?: { items?: Array<{ _id: string; input: string; inputType: string; result: { riskScore: number; verdict: string; type: string; createdAt?: string }; createdAt: string }>; meta?: { page: number; total: number } };
     isLoading: boolean;
+    isError: boolean;
   };
   const items = data?.items || [];
   const total = data?.meta?.total || 0;
@@ -38,6 +39,10 @@ export default function ScanHistory() {
       {isLoading ? (
         <div className="glass-card p-12 text-center">
           <p className="text-muted-foreground text-sm">Loading scan history...</p>
+        </div>
+      ) : isError ? (
+        <div className="glass-card p-12 text-center">
+          <p className="text-destructive text-sm">Failed to load scan history.</p>
         </div>
       ) : items.length > 0 ? (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card overflow-hidden">

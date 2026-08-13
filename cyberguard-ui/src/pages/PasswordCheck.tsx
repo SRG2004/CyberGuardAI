@@ -55,9 +55,9 @@ export default function PasswordCheck() {
     <div className="max-w-2xl mx-auto space-y-6">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="font-display text-3xl font-bold text-foreground">Password Breach Scanner</h1>
-        <p className="text-muted-foreground mt-2">
-          Securely check if your passwords have been exposed in known data breaches. 
-          We use zero-knowledge **k-Anonymity**—your password is hashed locally and never leaves your browser.
+        <p className="text-muted-foreground mt-2 max-w-2xl">
+          Securely check if your passwords have been exposed in known data breaches. We use 
+          zero-knowledge <strong className="text-primary">k-Anonymity</strong>—your password is hashed locally and never leaves your browser.
         </p>
       </motion.div>
 

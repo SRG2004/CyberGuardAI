@@ -11,10 +11,15 @@ const pageTitles: Record<string, string> = {
   '/email-detector': 'Email Phishing Detector',
   '/threat-feed': 'Global Threat Feed',
   '/scan-history': 'Scan History',
-  '/report': 'Anonymous Report',
+  '/report': 'Threat Hunter',
+  '/password-check': 'Password Check',
+  '/sms-scanner': 'SMS Scanner',
+  '/device-audit': 'Device Audit',
+  '/file-analyzer': 'File Analyzer',
+  '/unshortener': 'URL Tracer',
+  '/header-analyzer': 'Header Spoof Analyzer',
   '/extension': 'Extension Manager',
   '/admin': 'Admin Panel',
-
   '/settings': 'Settings',
   '/profile': 'Profile',
 };

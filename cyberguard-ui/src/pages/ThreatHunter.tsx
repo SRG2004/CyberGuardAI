@@ -82,11 +82,11 @@ export default function ThreatHunter() {
           </div>
           <div>
             <label className="text-xs text-muted-foreground block mb-1.5">URL or Source</label>
-            <input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://..." className="w-full h-10 px-4 rounded-lg bg-muted/50 border border-border text-sm font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-all" />
+            <input value={url} onChange={e => setUrl(e.target.value)} className="w-full h-10 px-4 rounded-lg bg-background border border-border text-sm font-mono text-foreground focus:outline-none focus:border-primary/50 transition-all" />
           </div>
           <div>
             <label className="text-xs text-muted-foreground block mb-1.5">Description</label>
-            <textarea value={description} onChange={e => setDescription(e.target.value)} rows={4} placeholder="Describe the threat..." className="w-full px-4 py-3 rounded-lg bg-muted/50 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 resize-none transition-all" />
+            <textarea value={description} onChange={e => setDescription(e.target.value)} rows={4} className="w-full px-4 py-3 rounded-lg bg-background border border-border text-sm text-foreground focus:outline-none focus:border-primary/50 resize-none transition-all" />
           </div>
           <div className="relative p-3 rounded-lg border border-dashed border-border text-center cursor-pointer hover:border-primary/30 transition-colors">
             <input 

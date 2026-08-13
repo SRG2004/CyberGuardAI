@@ -56,15 +56,12 @@ export default function EmailPhishingDetector() {
         <input
           value={subject}
           onChange={e => setSubject(e.target.value)}
-          placeholder="Email Subject Line"
-          className="w-full h-10 px-4 rounded-lg bg-muted/50 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-all"
+          className="w-full px-4 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:border-primary/50 transition-colors"
         />
         <textarea
           value={emailContent}
           onChange={e => setEmailContent(e.target.value)}
-          placeholder="Paste the full email content here for phishing analysis..."
-          rows={16}
-          className="w-full px-4 py-3 rounded-lg bg-muted/50 border border-border text-sm text-foreground font-mono placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 resize-none transition-all"
+          className="w-full h-full min-h-[200px] p-4 bg-background border border-border rounded-lg text-sm resize-none focus:outline-none focus:border-primary/50 transition-colors"
         />
         <GlowButton onClick={handleAnalyze} className="w-full" size="lg" disabled={scanEmail.isLoading}>
           {scanEmail.isLoading ? 'Analyzing...' : 'Analyze Email'}

@@ -38,8 +38,7 @@ export default function LinkScanner() {
             <input
               value={url}
               onChange={e => setUrl(e.target.value.replace(/\s+/g, ''))}
-              placeholder="https://suspicious-link.example.com"
-              className="w-full h-14 pl-12 pr-4 rounded-xl bg-muted/50 border border-border text-foreground font-mono text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
+              className="w-full h-14 pl-12 pr-4 rounded-xl bg-background border border-border text-foreground font-mono text-sm focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
               onKeyDown={e => e.key === 'Enter' && handleScan()}
             />
           </div>
