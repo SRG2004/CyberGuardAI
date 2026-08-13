@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { useTheme } from './theme-provider';
+import { useTheme } from '../theme-provider';
 
 const pageTitles: Record<string, string> = {
   '/dashboard': 'Dashboard',
