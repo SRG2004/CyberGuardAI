@@ -76,3 +76,5 @@ with gr.Blocks(title="CyberGuard AI — Threat Detection API") as demo:
 
 # Hugging Face looks for 'demo' or 'app'
 app = demo
+if __name__ == "__main__":
+    demo.launch()
