@@ -110,7 +110,6 @@ def _load_transformer(model_dir: str, label: str):
 
 
 # ── Startup ───────────────────────────────────────────────────────────
-@app.on_event("startup")
 def startup():
     global url_model, email_model, url_transformer, email_transformer
 
@@ -562,6 +561,9 @@ def retrain_endpoint():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Retraining failed: {str(e)}")
+
+# Call startup to load models synchronously
+startup()
 
 if __name__ == "__main__":
     import uvicorn
