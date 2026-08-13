@@ -70,8 +70,7 @@ export default function UrlUnshortener() {
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAnalyze()}
-                  placeholder="e.g. https://bit.ly/3xYz"
-                  className="w-full px-4 py-2.5 rounded-lg bg-muted/50 border border-border text-sm focus:outline-none focus:border-primary/50 transition-colors"
+                  className="w-full px-4 py-2.5 rounded-lg bg-background border border-border text-sm focus:outline-none focus:border-primary/50 transition-colors"
                 />
               </div>
               <GlowButton className="w-full" onClick={handleAnalyze} disabled={!url || isAnalyzing}>

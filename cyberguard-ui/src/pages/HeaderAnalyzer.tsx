@@ -113,7 +113,6 @@ export default function HeaderAnalyzer() {
             <textarea
               value={headers}
               onChange={(e) => setHeaders(e.target.value)}
-              placeholder="Return-Path: <bounces@example.com>&#10;Authentication-Results: mx.google.com;&#10;       dkim=pass header.i=@example.com header.s=s1 header.b=...;&#10;       spf=pass (google.com: domain of bounces@example.com designates 192.0.2.1 as permitted sender)&#10;       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=example.com"
               className="w-full flex-1 min-h-[300px] p-4 rounded-lg bg-background border border-border text-xs font-mono text-foreground focus:outline-none focus:border-primary/50 resize-none transition-colors"
             />
             <GlowButton className="w-full mt-4" onClick={analyzeHeaders} disabled={!headers}>

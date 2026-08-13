@@ -54,9 +54,8 @@ export default function SmsScanner() {
         <textarea
           value={smsContent}
           onChange={e => setSmsContent(e.target.value)}
-          placeholder="e.g. Your package is held at customs. Please click here to pay the $2.99 fee: https://..."
           rows={6}
-          className="w-full px-4 py-3 rounded-lg bg-muted/50 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 resize-none transition-all"
+          className="w-full px-4 py-3 rounded-lg bg-background border border-border text-sm text-foreground focus:outline-none focus:border-primary/50 resize-none transition-all"
         />
         <GlowButton className="w-full" onClick={handleAnalyze} disabled={!smsContent || scanEmail.isPending}>
           {scanEmail.isPending ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Analyzing Message...</> : 'Scan Message'}
