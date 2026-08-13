@@ -28,4 +28,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:7860/health')"
 
 # Use PORT env var (HF Spaces sets PORT=7860)
-CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]
