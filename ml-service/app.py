@@ -6,15 +6,7 @@ Compatible with both CPU Basic and ZeroGPU hardware on HF Spaces.
 
 import gradio as gr
 
-try:
-    import spaces
-except ImportError:
-    class spaces:
-        @staticmethod
-        def GPU(func=None, **kwargs):
-            if func is None:
-                return lambda f: f
-            return func
+import spaces
 
 from main import app as fastapi_app
 
