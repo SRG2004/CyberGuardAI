@@ -83,7 +83,7 @@ with gr.Blocks(title="CyberGuard AI — Threat Detection API") as demo:
     gr.Markdown("### API Endpoints\n- `POST /predict/url` — URL analysis\n- `POST /predict/email` — Email analysis\n- `GET /health` — Health check")
 
 # Mount FastAPI app onto Gradio so REST API endpoints still work
-app = gr.mount_gradio_app(fastapi_app, demo, path="/")
+app = gr.mount_gradio_app(fastapi_app, demo, path="/ui")
 
 if __name__ == "__main__":
     demo.launch()

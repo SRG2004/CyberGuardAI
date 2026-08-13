@@ -2,6 +2,7 @@ import os
 import time
 from typing import Dict, List, Optional
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import joblib
@@ -9,6 +10,10 @@ import numpy as np
 import re
 
 app = FastAPI(title="CyberGuard ML Service", version="3.0.0")
+
+@app.get("/", include_in_schema=False)
+def read_root():
+    return RedirectResponse(url="/ui/")
 
 app.add_middleware(
     CORSMiddleware,
