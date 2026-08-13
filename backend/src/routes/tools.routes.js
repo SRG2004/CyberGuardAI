@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { authenticate, optionalAuth } from '../middleware/auth.js';
-import { apiRateLimit } from '../middleware/rateLimit.js';
+import { scanUserRateLimit } from '../middleware/rateLimit.js';
 import axios from 'axios';
 
 const router = Router();
 
 // Follow redirects to unshorten a URL
-router.post('/unshorten', apiRateLimit, async (req, res) => {
+router.post('/unshorten', scanUserRateLimit, async (req, res) => {
   const { url } = req.body;
   if (!url || typeof url !== 'string') {
     return res.status(400).json({ success: false, error: { message: 'URL is required' } });
