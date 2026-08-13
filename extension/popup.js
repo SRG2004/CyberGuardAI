@@ -212,7 +212,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (logoutBtn) {
     logoutBtn.addEventListener('click', async () => {
-      await chrome.storage.local.remove(['userToken', 'userEmail']);
+      await chrome.storage.local.remove(['userToken', 'userEmail', 'urlsScanned', 'threatsFound']);
+      document.getElementById('urls-scanned').textContent = '0';
+      document.getElementById('threats-found').textContent = '0';
       showLoggedOut();
     });
   }
