@@ -63,7 +63,7 @@ else:
 
 
 # Create Gradio UI for manual interactive testing
-with gr.Blocks(title="CyberGuard AI — Threat Detection API") as demo:
+with gr.Blocks(title="CyberGuard AI — Threat Detection API") as _demo:
     gr.Markdown("# 🛡️ CyberGuard AI — Threat Detection Microservice")
     gr.Markdown("FastAPI backend microservice running on Hugging Face Spaces free tier.")
 
@@ -83,7 +83,8 @@ with gr.Blocks(title="CyberGuard AI — Threat Detection API") as demo:
     gr.Markdown("### API Endpoints\n- `POST /predict/url` — URL analysis\n- `POST /predict/email` — Email analysis\n- `GET /health` — Health check")
 
 # Mount FastAPI app onto Gradio so REST API endpoints still work
-app = gr.mount_gradio_app(fastapi_app, demo, path="/ui")
+app = gr.mount_gradio_app(fastapi_app, _demo, path="/ui")
 
 if __name__ == "__main__":
-    demo.launch()
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=7860)
