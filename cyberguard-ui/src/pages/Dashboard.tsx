@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { AlertTriangle, Link as LinkIcon, Mail, Shield, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { AlertTriangle, Link as LinkIcon, Mail, Shield, Loader2, CheckCircle2, AlertCircle, MonitorSmartphone, MessageSquareText, FileSearch, Link2, Fingerprint } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { StatWidget } from '@/components/ui/StatWidget';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -40,6 +41,7 @@ function EmptyChart({ label }: { label: string }) {
 
 export default function Dashboard() {
   const [quickUrl, setQuickUrl] = useState('');
+  const navigate = useNavigate();
 
   // Dashboard summary
   const { data: summary, isLoading: summaryLoading, error: summaryError } = useDashboardSummary();
@@ -413,7 +415,35 @@ export default function Dashboard() {
             </div>
           )}
         </motion.div>
+        </motion.div>
       </div>
+
+      {/* Quick Tools */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }} className="glass-card p-5">
+        <h3 className="font-display font-semibold text-foreground text-sm mb-4">Quick Security Tools</h3>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <button onClick={() => navigate('/sms-scanner')} className="flex flex-col items-center justify-center gap-3 p-4 rounded-xl border border-border/50 hover:border-primary/50 bg-muted/20 hover:bg-primary/5 transition-all">
+            <MessageSquareText className="w-6 h-6 text-primary" />
+            <span className="text-xs font-semibold text-foreground">SMS Scanner</span>
+          </button>
+          <button onClick={() => navigate('/device-audit')} className="flex flex-col items-center justify-center gap-3 p-4 rounded-xl border border-border/50 hover:border-primary/50 bg-muted/20 hover:bg-primary/5 transition-all">
+            <MonitorSmartphone className="w-6 h-6 text-primary" />
+            <span className="text-xs font-semibold text-foreground">Device Audit</span>
+          </button>
+          <button onClick={() => navigate('/file-analyzer')} className="flex flex-col items-center justify-center gap-3 p-4 rounded-xl border border-border/50 hover:border-primary/50 bg-muted/20 hover:bg-primary/5 transition-all">
+            <FileSearch className="w-6 h-6 text-primary" />
+            <span className="text-xs font-semibold text-foreground">File Analyzer</span>
+          </button>
+          <button onClick={() => navigate('/unshortener')} className="flex flex-col items-center justify-center gap-3 p-4 rounded-xl border border-border/50 hover:border-primary/50 bg-muted/20 hover:bg-primary/5 transition-all">
+            <Link2 className="w-6 h-6 text-primary" />
+            <span className="text-xs font-semibold text-foreground">URL Tracer</span>
+          </button>
+          <button onClick={() => navigate('/header-analyzer')} className="flex flex-col items-center justify-center gap-3 p-4 rounded-xl border border-border/50 hover:border-primary/50 bg-muted/20 hover:bg-primary/5 transition-all">
+            <Fingerprint className="w-6 h-6 text-primary" />
+            <span className="text-xs font-semibold text-foreground">Header Spoof</span>
+          </button>
+        </div>
+      </motion.div>
     </div>
   );
 }
