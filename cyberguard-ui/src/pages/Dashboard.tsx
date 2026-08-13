@@ -305,7 +305,7 @@ export default function Dashboard() {
             {scanSuccess && (
               <div className="mt-2 flex items-center gap-1.5 text-safe text-xs">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                Scan complete — {scanMutation.data?.verdict} ({scanMutation.data?.riskScore}%)
+                Scan complete — {scanMutation.data?.data?.verdict} ({scanMutation.data?.data?.riskScore}%)
               </div>
             )}
             {scanError && (

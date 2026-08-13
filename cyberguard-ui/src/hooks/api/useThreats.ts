@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { Threat, Paginated } from '@/types';
+import { Threat, Paginated, TodayStats, TimelinePoint, RadarPoint } from '@/types';
 
 export function useLiveThreats() {
   return useQuery({
@@ -34,7 +34,7 @@ export function useTodayStats() {
   return useQuery({
     queryKey: ['threats', 'stats', 'today'],
     queryFn: async () => {
-      const res = await api.get('/api/threats/stats/today');
+      const res = await api.get<TodayStats>('/api/threats/stats/today');
       return res.data;
     },
     staleTime: 60_000,
@@ -45,7 +45,7 @@ export function useTimelineStats() {
   return useQuery({
     queryKey: ['threats', 'stats', 'timeline'],
     queryFn: async () => {
-      const res = await api.get('/api/threats/stats/timeline');
+      const res = await api.get<TimelinePoint[]>('/api/threats/stats/timeline');
       return res.data;
     },
     staleTime: 60_000,
@@ -56,7 +56,7 @@ export function useRadarData() {
   return useQuery({
     queryKey: ['threats', 'stats', 'radar'],
     queryFn: async () => {
-      const res = await api.get('/api/threats/stats/radar');
+      const res = await api.get<RadarPoint[]>('/api/threats/stats/radar');
       return res.data;
     },
     staleTime: 60_000,
