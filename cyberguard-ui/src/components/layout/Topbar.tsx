@@ -13,7 +13,7 @@ const pageTitles: Record<string, string> = {
   '/report': 'Anonymous Report',
   '/extension': 'Extension Manager',
   '/admin': 'Admin Panel',
-  '/moderator': 'Moderator Panel',
+
   '/settings': 'Settings',
   '/profile': 'Profile',
 };

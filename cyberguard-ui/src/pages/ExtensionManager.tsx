@@ -49,9 +49,7 @@ export default function ExtensionManager() {
             <div className="flex items-center gap-3 mb-1">
               <h2 className="font-display text-xl font-bold text-foreground">CyberGuard Extension</h2>
               <span className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${
-                user?.role === 'admin' ? 'bg-destructive/10 text-destructive' :
-                user?.role === 'moderator' ? 'bg-warning/10 text-warning' :
-                'bg-safe/10 text-safe'
+                user?.role === 'admin' ? 'bg-destructive/10 text-destructive' : 'bg-safe/10 text-safe'
               }`}>
                 <span className="w-1.5 h-1.5 rounded-full animate-pulse" /> {user?.role || 'student'}
               </span>

@@ -27,7 +27,6 @@ export default function Profile() {
             <div className="flex items-center gap-3 mt-2">
               <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded-md capitalize border ${
                 user.role === 'admin' ? 'bg-destructive/10 text-destructive border-destructive/30' :
-                user.role === 'moderator' ? 'bg-warning/10 text-warning border-warning/30' :
                 'bg-primary/10 text-primary border-primary/20'
               }`}>{roleLabel}</span>
               <span className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="w-3 h-3" /> Joined {joinedDate}</span>

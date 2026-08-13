@@ -5,7 +5,7 @@ const blocklistSchema = new mongoose.Schema({
   addedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   reason: { type: String, default: '' },
   threatType: { type: String, default: '' },
-  source: { type: String, enum: ['admin', 'moderator', 'auto', 'import'], default: 'auto' },
+  source: { type: String, enum: ['admin', 'auto', 'import'], default: 'auto' },
   isActive: { type: Boolean, default: true },
 }, { timestamps: true });
 

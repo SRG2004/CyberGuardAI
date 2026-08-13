@@ -25,7 +25,7 @@ router.get('/users', authenticate, isAdmin, async (req, res) => {
 
 router.patch('/users/:userId/role', authenticate, isAdmin, async (req, res) => {
   const { role } = req.body;
-  if (!role || !['student', 'moderator', 'admin'].includes(role)) {
+  if (!role || !['student', 'admin'].includes(role)) {
     return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Valid role required.' } });
   }
 

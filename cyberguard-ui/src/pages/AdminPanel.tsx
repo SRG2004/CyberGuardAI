@@ -263,7 +263,7 @@ export default function AdminPanel() {
                       className="px-2 py-0.5 text-[10px] font-medium rounded bg-muted/50 border border-border text-xs"
                     >
                       <option value="student">Student</option>
-                      <option value="moderator">Moderator</option>
+
                       <option value="admin">Admin</option>
                     </select>
                   </td>
