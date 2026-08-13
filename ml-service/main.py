@@ -11,9 +11,7 @@ import re
 
 app = FastAPI(title="CyberGuard ML Service", version="3.0.0")
 
-@app.get("/", include_in_schema=False)
-def read_root():
-    return RedirectResponse(url="/ui/")
+# No root redirect needed; Gradio mounts on /
 
 app.add_middleware(
     CORSMiddleware,
