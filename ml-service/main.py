@@ -207,6 +207,29 @@ def model_info():
 # ── /predict/url ──────────────────────────────────────────────────────
 @app.post("/predict/url")
 def predict_url(req: UrlRequest):
+    import requests
+    
+    # ── 1. Real-Time Cross-Reference Layer (URLhaus) ──────────────
+    try:
+        urlhaus_resp = requests.post("https://urlhaus-api.abuse.ch/v1/url/", data={"url": req.url}, timeout=2.0)
+        if urlhaus_resp.status_code == 200:
+            data = urlhaus_resp.json()
+            if data.get('query_status') == 'ok' and data.get('url_status') == 'online':
+                return {
+                    "score": 1.0,
+                    "label": "phishing",
+                    "features": ["verified_malicious"],
+                    "confidence": 1.0,
+                    "model_type": "threat_intel_api",
+                    "model_accuracy": 1.0,
+                    "transformer_enhanced": False,
+                    "explainability": ["+100.0% risk due to Verified by URLhaus (Abuse.ch)"],
+                    "breakdown": { "feature_score": 1.0, "transformer_score": 1.0 }
+                }
+    except Exception as e:
+        pass # Silently fallback to ML if API fails or times out
+        
+    # ── 2. ML Pipeline ───────────────────────────────────────────
     try:
         from preprocess import extract_url_features
 
@@ -276,6 +299,33 @@ def predict_url(req: UrlRequest):
             active_features.append('transformer_phishing_signal')
 
         label = 'phishing' if phishing_prob > 0.5 else 'legitimate'
+        
+        # ── 3. Explainable AI (XAI) Integration ────────────────────
+        explainability = []
+        try:
+            # Try basic feature impact estimation (since exact SHAP on Pipeline requires tree explainer on scaled data)
+            classifier = url_model['pipeline'].steps[-1][1]
+            if hasattr(classifier, 'feature_importances_'):
+                importances = classifier.feature_importances_
+                fnames = url_model['feature_names']
+                
+                # Scale by actual feature presence
+                impacts = [(fnames[i], float(importances[i]) * float(X[0][i])) for i in range(len(importances))]
+                impacts.sort(key=lambda x: abs(x[1]), reverse=True)
+                
+                total_impact = sum(abs(v) for _, v in impacts) + 1e-6
+                for fname, imp in impacts[:5]:
+                    if abs(imp) > 0.001:
+                        percent = (abs(imp) / total_impact) * (phishing_prob * 100)
+                        if percent > 1.0:
+                            direction = "+" if phishing_prob > 0.5 else "-"
+                            explainability.append(f"{direction}{percent:.1f}% risk due to {fname}")
+                            
+            if transformer_score >= 0 and transformer_score > 0.6:
+                explainability.append(f"+{(transformer_score * 40):.1f}% risk due to deep semantic transformer match")
+                
+        except Exception:
+            explainability = ["+ ML model internal features matched"]
 
         return {
             "score": round(phishing_prob, 4),
@@ -285,6 +335,7 @@ def predict_url(req: UrlRequest):
             "model_type": url_model.get('model_type', 'unknown'),
             "model_accuracy": url_model.get('accuracy', 0),
             "transformer_enhanced": transformer_score >= 0,
+            "explainability": explainability,
             "breakdown": {
                 "feature_score": round(feature_prob, 4),
                 "transformer_score": round(transformer_score, 4) if transformer_score >= 0 else None,
@@ -340,6 +391,20 @@ def predict_email(req: EmailRequest):
 
         label = 'phishing' if combined > 0.5 else 'legitimate'
 
+        # ── Explainability (XAI) for Email ────────────────────
+        explainability = []
+        if text_prob > 0.6:
+            explainability.append(f"+{(text_prob * 40):.1f}% risk due to NLP semantic threat match")
+        if urgency > 0.5:
+            explainability.append(f"+{(urgency * 35):.1f}% risk due to high urgency/pressure signals")
+        if link_factor > 0.4:
+            explainability.append(f"+{(link_factor * 15):.1f}% risk due to excessive or suspicious links")
+        if email_feats.get('has_unsubscribe') == 0:
+            explainability.append(f"+10.0% risk due to missing unsubscribe/sender info")
+        
+        if not explainability:
+            explainability.append("- Signals indicate legitimate context")
+
         # Extract highlights
         signals = []
         highlights = []
@@ -378,6 +443,7 @@ def predict_email(req: EmailRequest):
             "urgency_score": round(urgency, 4),
             "text_probability": round(text_prob, 4),
             "transformer_enhanced": used_transformer,
+            "explainability": explainability,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Email prediction failed: {str(e)}")

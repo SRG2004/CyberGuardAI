@@ -286,11 +286,16 @@ async function handleScanLinks({ pageUrl, links = [], emailText, forms = [], ifr
   // Notify on malicious
   const malResults = Object.entries(results).filter(([, v]) => v.verdict === 'malicious');
   if (malResults.length > 0) {
+    const urlsText = malResults.map(([u]) => u).join('\n');
+    const msg = malResults.length === 1 
+      ? `Malicious URL blocked:\n${urlsText}`
+      : `${malResults.length} malicious URLs found:\n${urlsText.slice(0, 100)}${urlsText.length > 100 ? '...' : ''}`;
+      
     chrome.notifications.create({
       type: 'basic',
       iconUrl: chrome.runtime.getURL('icons/icon128.png'),
       title: 'CyberGuard — Threat Detected',
-      message: `${malResults.length} malicious link(s) found on this page.`,
+      message: msg,
       priority: 2,
     });
   }

@@ -15,6 +15,7 @@ const threatSchema = new mongoose.Schema({
     mlModel: {
       probability: { type: Number, default: 0 },
       topFeatures: [{ type: String }],
+      explainability: [{ type: String }],
     },
     whois: {
       domainAge: { type: Number, default: null },

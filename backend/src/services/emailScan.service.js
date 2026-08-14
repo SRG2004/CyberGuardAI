@@ -57,12 +57,13 @@ export async function scanEmail(subject, body, userId = null, source = 'dashboar
     verdict,
     riskScore,
     sources: {
-      mlModel: { probability: mlResult.score, features: mlResult.signals?.map(s => s.type) || [], signals: mlResult.signals || [], highlights: mlResult.highlights || [] },
+      mlModel: { probability: mlResult.score, features: mlResult.signals?.map(s => s.type) || [], signals: mlResult.signals || [], highlights: mlResult.highlights || [], explainability: mlResult.explainability || [] },
       whois: { domainAge: null, registrar: null, country: 'Unknown' },
     },
     threatId: threat._id,
     durationMs,
     emailSignals: mlResult.signals || [],
     emailHighlights: mlResult.highlights || [],
+    explainability: mlResult.explainability || [],
   };
 }

@@ -83,7 +83,7 @@ export async function scanUrl(url, userId = null, source = 'dashboard') {
     verdict,
     riskScore,
     sources: {
-      mlModel: { probability: mlResult.score, features: mlResult.features || [] },
+      mlModel: { probability: mlResult.score, features: mlResult.features || [], explainability: mlResult.explainability || [] },
       whois: whoisResult,
     },
     threatId: threat._id,

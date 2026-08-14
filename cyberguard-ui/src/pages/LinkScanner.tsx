@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, Shield, FileDown, Flag } from 'lucide-react';
+import { Search, Shield, FileDown, Flag, Brain } from 'lucide-react';
 import { GlowButton } from '@/components/ui/GlowButton';
 import { useScanUrl } from '@/hooks/api/useScans';
 import { getRiskColor } from '@/lib/theme';
@@ -98,6 +98,26 @@ export default function LinkScanner() {
               </motion.div>
             ))}
           </div>
+
+          {/* Explainability (XAI) */}
+          {scan.data.data.sources?.mlModel?.explainability?.length > 0 && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6">
+              <h3 className="font-display font-semibold text-foreground text-sm mb-4 flex items-center gap-2">
+                <Brain className="w-4 h-4 text-primary" /> AI Reasoning (XAI)
+              </h3>
+              <div className="space-y-2">
+                {scan.data.data.sources.mlModel.explainability.map((exp: string, i: number) => {
+                  const isPos = exp.trim().startsWith('+');
+                  return (
+                    <div key={i} className={`text-sm p-3 rounded-lg border flex items-start gap-2 ${isPos ? 'bg-destructive/10 border-destructive/20 text-destructive' : 'bg-safe/10 border-safe/20 text-safe'}`}>
+                      <span className="font-mono mt-0.5">{isPos ? '▲' : '▼'}</span>
+                      <span>{exp.replace(/^[+-]/, '').trim()}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
 
           {/* Actions */}
           <div className="flex gap-3">

@@ -17,10 +17,10 @@ export async function predictUrl(url) {
     const client = await getClient();
     const result = await client.predict('/predict_url', [url]);
     const data = result.data[0];
-    return { score: data.score, label: data.label, features: data.features, confidence: data.confidence };
+    return { score: data.score, label: data.label, features: data.features, confidence: data.confidence, explainability: data.explainability || [] };
   } catch (err) {
     logger.error('ML URL prediction failed:', err.message);
-    return { score: 0, label: 'unknown', features: [], confidence: 0, failed: true };
+    return { score: 0, label: 'unknown', features: [], confidence: 0, explainability: [], failed: true };
   }
 }
 
@@ -29,10 +29,10 @@ export async function predictEmail(subject, body) {
     const client = await getClient();
     const result = await client.predict('/predict_email', [subject, body]);
     const data = result.data[0];
-    return { score: data.score, label: data.label, signals: data.signals || [], highlights: data.highlights || [] };
+    return { score: data.score, label: data.label, signals: data.signals || [], highlights: data.highlights || [], explainability: data.explainability || [] };
   } catch (err) {
     logger.error('ML Email prediction failed:', err.message);
-    return { score: 0, label: 'unknown', signals: [], highlights: [] };
+    return { score: 0, label: 'unknown', signals: [], highlights: [], explainability: [] };
   }
 }
 

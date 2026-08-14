@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, AlertCircle, CheckCircle, AlertTriangle, Info } from 'lucide-react';
+import { Mail, AlertCircle, CheckCircle, AlertTriangle, Info, Brain } from 'lucide-react';
 import { useScanEmail } from '@/hooks/api/useScans';
 import { GlowButton } from '@/components/ui/GlowButton';
 
@@ -83,6 +83,26 @@ export default function EmailPhishingDetector() {
                 {score >= 70 ? 'HIGH RISK — Likely Phishing' : score >= 50 ? 'MODERATE — Suspicious Content' : 'LOW RISK — Appears Legitimate'}
               </p>
             </div>
+
+            {/* AI Reasoning (XAI) */}
+            {scanEmail.data?.explainability?.length > 0 && (
+              <div className="glass-card p-6">
+                <h3 className="font-display font-semibold text-foreground text-sm mb-4 flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-primary" /> AI Reasoning (XAI)
+                </h3>
+                <div className="space-y-2">
+                  {scanEmail.data.explainability.map((exp: string, i: number) => {
+                    const isPos = exp.trim().startsWith('+');
+                    return (
+                      <div key={i} className={`text-sm p-3 rounded-lg border flex items-start gap-2 ${isPos ? 'bg-destructive/10 border-destructive/20 text-destructive' : 'bg-safe/10 border-safe/20 text-safe'}`}>
+                        <span className="font-mono mt-0.5">{isPos ? '▲' : '▼'}</span>
+                        <span>{exp.replace(/^[+-]/, '').trim()}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Signals */}
             <div className="glass-card p-6">
