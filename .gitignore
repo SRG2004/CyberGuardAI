@@ -45,3 +45,6 @@ desktop.ini
 .antigravityignore
 hf_space*/
 implementation_plan.md
+
+venv312/
+*.safetensors
