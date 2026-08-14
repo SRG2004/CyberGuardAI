@@ -61,29 +61,43 @@ class PageRequest(BaseModel):
 
 
 # ── Transformer helper ────────────────────────────────────────────────
-def _transformer_predict(model, tokenizer, text: str, max_length: int = 128) -> float:
+def _transformer_predict(model_dict, text: str, max_length: int = 128) -> float:
     """
-    Run a single text through a HuggingFace Transformer and return the
-    phishing probability (class 1 softmax score).
+    Run a single text through a HuggingFace Transformer or ONNX runtime
+    and return the phishing probability (class 1 softmax score).
     """
     try:
-        import torch
+        import numpy as np
+        model = model_dict['model']
+        tokenizer = model_dict['tokenizer']
+        is_onnx = model_dict.get('is_onnx', False)
 
         inputs = tokenizer(
             text,
             truncation=True,
+            padding="max_length" if is_onnx else False,
             max_length=max_length,
-            padding='max_length',
-            return_tensors='pt',
+            return_tensors="np" if is_onnx else "pt"
         )
-        device = next(model.parameters()).device
-        inputs = {k: v.to(device) for k, v in inputs.items()}
 
-        with torch.no_grad():
-            logits = model(**inputs).logits
-
-        probs = torch.softmax(logits, dim=1)
-        return float(probs[0][1])  # class 1 = phishing
+        if is_onnx:
+            # ONNX Inference
+            ort_inputs = {
+                'input_ids': inputs['input_ids'].astype(np.int64),
+                'attention_mask': inputs['attention_mask'].astype(np.int64)
+            }
+            logits = model.run(None, ort_inputs)[0]
+            # Softmax
+            exp_logits = np.exp(logits - np.max(logits, axis=-1, keepdims=True))
+            probs = exp_logits / np.sum(exp_logits, axis=-1, keepdims=True)
+            return float(probs[0][1])
+        else:
+            # PyTorch Inference
+            import torch
+            with torch.no_grad():
+                outputs = model(**inputs)
+                probs = torch.nn.functional.softmax(outputs.logits, dim=-1)
+                return float(probs[0][1].item())
     except Exception as e:
         print(f"Transformer predict error: {e}")
         return -1.0  # sentinel: caller should ignore
@@ -94,16 +108,26 @@ def _load_transformer(model_dir: str, label: str):
     if not os.path.exists(model_dir):
         return None
     try:
-        import torch
-        from transformers import AutoTokenizer, AutoModelForSequenceClassification
-
+        from transformers import AutoTokenizer
         tokenizer = AutoTokenizer.from_pretrained(model_dir)
+
+        # Check for ONNX model first
+        onnx_path = os.path.join(model_dir, "model.onnx")
+        if os.path.exists(onnx_path):
+            import onnxruntime as ort
+            print(f"  [ONNX] {label} ONNX Engine loaded from {model_dir}")
+            session = ort.InferenceSession(onnx_path)
+            return {"model": session, "tokenizer": tokenizer, "is_onnx": True}
+
+        # Fallback to PyTorch
+        import torch
+        from transformers import AutoModelForSequenceClassification
         model = AutoModelForSequenceClassification.from_pretrained(model_dir)
         model.eval()
-        print(f"  ✓ {label} Transformer loaded from {model_dir}")
-        return {"model": model, "tokenizer": tokenizer}
+        print(f"  [PyTorch] {label} PyTorch Transformer loaded from {model_dir}")
+        return {"model": model, "tokenizer": tokenizer, "is_onnx": False}
     except Exception as e:
-        print(f"  ✗ {label} Transformer failed: {e}")
+        print(f"  [ERROR] {label} Transformer failed: {e}")
         return None
 
 
@@ -131,7 +155,7 @@ def startup():
 
     # 2. Load fine-tuned Transformer models (if available)
     print("\nLoading Transformer models...")
-    url_transformer_dir = os.path.join(MODELS_DIR, 'finetuned_url_transformer')
+    url_transformer_dir = os.path.join(MODELS_DIR, 'transformer_url_phishing')
     email_transformer_dir = os.path.join(MODELS_DIR, 'finetuned_email_transformer')
     # Also check legacy single-transformer directory
     legacy_transformer_dir = os.path.join(MODELS_DIR, 'finetuned_phishing_transformer')
@@ -250,8 +274,7 @@ def predict_url(req: UrlRequest):
         transformer_score = -1.0
         if url_transformer is not None:
             transformer_score = _transformer_predict(
-                url_transformer['model'],
-                url_transformer['tokenizer'],
+                url_transformer,
                 req.url,
                 max_length=128,
             )
@@ -362,8 +385,7 @@ def predict_email(req: EmailRequest):
             # Use Transformer for text classification
             email_text = f"{req.subject} {req.body}".strip()
             t_prob = _transformer_predict(
-                email_transformer['model'],
-                email_transformer['tokenizer'],
+                email_transformer,
                 email_text,
                 max_length=256,
             )
