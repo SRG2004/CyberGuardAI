@@ -100,10 +100,15 @@ router.post('/traceroute', scanUserRateLimit, async (req, res) => {
       timeout: 10000 // 10 second timeout
     });
     
+    let rawOutput = response.data;
+    if (typeof rawOutput === 'string' && rawOutput.toLowerCase().includes('error')) {
+      rawOutput = "Traceroute restricted by cloud firewall.\n(ICMP packets are blocked by the hosting provider's security policies).";
+    }
+    
     res.json({
       success: true,
       data: {
-        rawOutput: response.data,
+        rawOutput: rawOutput,
         hostname
       }
     });

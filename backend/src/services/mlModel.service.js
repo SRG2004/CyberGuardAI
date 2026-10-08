@@ -72,11 +72,15 @@ export async function predictQr(imageBlob) {
     const formData = new FormData();
     formData.append('file', imageBlob, 'qr.png');
 
-    const response = await axios.post(`${getBaseUrl()}/predict/qr`, formData, { 
-      headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 15000 
+    const response = await fetch(`${getBaseUrl()}/predict/qr`, {
+      method: 'POST',
+      body: formData,
+      signal: AbortSignal.timeout(15000)
     });
-    const data = response.data;
+    
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    
+    const data = await response.json();
     return { 
         riskScore: data.riskScore || 0, 
         verdict: data.verdict, 
