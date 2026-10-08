@@ -44,6 +44,8 @@ jobs:
 
       - name: Install & check ML service
         working-directory: ml-service
+        env:
+          SKIP_TRAINING: "1"
         run: |
           pip install -r requirements.txt
           python -c "from preprocess import extract_url_features; print('Feature extraction OK')"

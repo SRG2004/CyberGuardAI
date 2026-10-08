@@ -196,10 +196,13 @@ def startup():
 
     # 1. Load sklearn / XGBoost models
     if not os.path.exists(url_path) or not os.path.exists(email_path):
-        print("Models not found, training...")
-        from train import train_url_model, train_email_model
-        url_model = train_url_model()
-        email_model = train_email_model()
+        if os.environ.get("SKIP_TRAINING") == "1":
+            print("Models not found, but SKIP_TRAINING=1 is set. Skipping training.")
+        else:
+            print("Models not found, training...")
+            from train import train_url_model, train_email_model
+            url_model = train_url_model()
+            email_model = train_email_model()
     else:
         url_model = joblib.load(url_path)
         email_model = joblib.load(email_path)
