@@ -9,7 +9,10 @@ type FileInfo = {
   size: number;
   type: string;
   lastModified: number;
-  hash?: string;
+  sha1?: string;
+  sha256?: string;
+  sha512?: string;
+  entropy?: number;
 };
 
 export default function FileAnalyzer() {
@@ -17,16 +20,41 @@ export default function FileAnalyzer() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [fileInfo, setFileInfo] = useState<FileInfo | null>(null);
 
-  const calculateHash = async (file: File): Promise<string> => {
+  const performAdvancedAnalysis = async (file: File): Promise<{ sha1: string, sha256: string, sha512: string, entropy: number }> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = async (e) => {
         try {
           const buffer = e.target?.result as ArrayBuffer;
-          const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
-          const hashArray = Array.from(new Uint8Array(hashBuffer));
-          const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-          resolve(hashHex);
+          
+          // Calculate Hashes
+          const [sha1Buf, sha256Buf, sha512Buf] = await Promise.all([
+            crypto.subtle.digest('SHA-1', buffer),
+            crypto.subtle.digest('SHA-256', buffer),
+            crypto.subtle.digest('SHA-512', buffer)
+          ]);
+
+          const toHex = (buf: ArrayBuffer) => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+          
+          // Calculate Entropy
+          const arr = new Uint8Array(buffer);
+          const freq = new Array(256).fill(0);
+          for (let i = 0; i < arr.length; i++) freq[arr[i]]++;
+          
+          let entropy = 0;
+          for (let i = 0; i < 256; i++) {
+            if (freq[i] > 0) {
+              const p = freq[i] / arr.length;
+              entropy -= p * Math.log2(p);
+            }
+          }
+
+          resolve({
+            sha1: toHex(sha1Buf),
+            sha256: toHex(sha256Buf),
+            sha512: toHex(sha512Buf),
+            entropy
+          });
         } catch (err) {
           reject(err);
         }
@@ -51,10 +79,10 @@ export default function FileAnalyzer() {
     });
 
     try {
-      const hash = await calculateHash(file);
-      setFileInfo(prev => prev ? { ...prev, hash } : null);
+      const analysis = await performAdvancedAnalysis(file);
+      setFileInfo(prev => prev ? { ...prev, ...analysis } : null);
     } catch (error) {
-      toast.error('Hash calculation failed', { description: 'Could not generate SHA-256 hash for this file.' });
+      toast.error('Analysis failed', { description: 'Could not generate advanced metadata for this file.' });
     } finally {
       setIsAnalyzing(false);
     }
@@ -165,25 +193,57 @@ export default function FileAnalyzer() {
                   </div>
                 </div>
 
-                <div className="p-3 bg-muted/30 rounded-lg border border-border/50">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Clock className="w-4 h-4 text-secondary" />
-                    <span className="text-xs text-muted-foreground">Last Modified</span>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 bg-muted/30 rounded-lg border border-border/50">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Clock className="w-4 h-4 text-secondary" />
+                      <span className="text-xs text-muted-foreground">Last Modified</span>
+                    </div>
+                    <p className="text-sm font-medium">{new Date(fileInfo.lastModified).toLocaleDateString()}</p>
                   </div>
-                  <p className="text-sm font-medium">{new Date(fileInfo.lastModified).toLocaleString()}</p>
+
+                  {fileInfo.entropy !== undefined && (
+                    <div className="p-3 bg-muted/30 rounded-lg border border-border/50">
+                      <div className="flex items-center gap-2 mb-1">
+                        <FileSearch className="w-4 h-4 text-secondary" />
+                        <span className="text-xs text-muted-foreground">Shannon Entropy</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium">{fileInfo.entropy.toFixed(2)} / 8</p>
+                        {fileInfo.entropy > 7.5 ? (
+                          <span className="text-[10px] font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded">High (Packed/Encrypted?)</span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-safe bg-safe/10 px-2 py-0.5 rounded">Normal</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {fileInfo.hash && (
-                  <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Hash className="w-4 h-4 text-primary" />
-                      <span className="text-xs font-semibold text-primary uppercase tracking-wider">SHA-256 Hash</span>
+                {fileInfo.sha256 && (
+                  <div className="p-4 bg-primary/5 rounded-lg border border-primary/20 space-y-3">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <Hash className="w-3 h-3 text-primary" />
+                        <span className="text-xs font-semibold text-primary uppercase tracking-wider">SHA-256</span>
+                      </div>
+                      <p className="text-[11px] font-mono break-all text-foreground bg-background/50 p-1.5 rounded border border-border/50 select-all">
+                        {fileInfo.sha256}
+                      </p>
                     </div>
-                    <p className="text-xs font-mono break-all text-foreground bg-background/50 p-2 rounded border border-border/50 select-all">
-                      {fileInfo.hash}
-                    </p>
+                    
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <Hash className="w-3 h-3 text-primary/70" />
+                        <span className="text-xs font-semibold text-primary/70 uppercase tracking-wider">SHA-1</span>
+                      </div>
+                      <p className="text-[11px] font-mono break-all text-foreground bg-background/50 p-1.5 rounded border border-border/50 select-all">
+                        {fileInfo.sha1}
+                      </p>
+                    </div>
+
                     <p className="text-[10px] text-muted-foreground mt-2">
-                      You can use this hash to search threat databases (like VirusTotal) without uploading the file content.
+                      Use these hashes to search threat databases (like VirusTotal) without uploading the file content.
                     </p>
                   </div>
                 )}

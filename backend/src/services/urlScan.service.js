@@ -1,5 +1,6 @@
 import { lookup as lookupWhois } from './whois.service.js';
-import { predictUrl } from './mlModel.service.js';
+import { predictUrl, predictPage } from './mlModel.service.js';
+import { runSandboxScan } from './sandbox.service.js';
 import { calculateRiskScore, getVerdict } from '../utils/riskScorer.js';
 import { getThreatType } from '../utils/urlParser.js';
 import Threat from '../models/Threat.js';
@@ -26,11 +27,21 @@ export async function scanUrl(url, userId = null, source = 'dashboard') {
     }
   }
 
-  // Run checks in parallel — custom ML model + WHOIS
-  const [mlResult, whoisResult] = await Promise.all([
-    predictUrl(url),
-    lookupWhois(url),
-  ]);
+  // If source is dashboard, perform a deep Sandbox Scan!
+  let mlResult;
+  let sandboxData = null;
+
+  const whoisPromise = lookupWhois(url);
+  
+  if (source === 'dashboard') {
+    logger.info(`[urlScan] Running Headless Sandbox Deep Scan for ${url}`);
+    sandboxData = await runSandboxScan(url);
+    mlResult = await predictPage(sandboxData);
+  } else {
+    mlResult = await predictUrl(url);
+  }
+
+  const whoisResult = await whoisPromise;
 
   // Calculate risk score
   const riskScore = calculateRiskScore(mlResult, whoisResult, url);
@@ -86,6 +97,11 @@ export async function scanUrl(url, userId = null, source = 'dashboard') {
       mlModel: { probability: mlResult.score, features: mlResult.features || [], explainability: mlResult.explainability || [] },
       whois: whoisResult,
     },
+    sandbox: sandboxData ? {
+      screenshot: sandboxData.screenshot,
+      forms_count: sandboxData.forms?.length || 0,
+      iframes_count: sandboxData.iframes?.length || 0,
+    } : null,
     threatId: threat._id,
     durationMs,
   };

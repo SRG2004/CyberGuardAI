@@ -29,7 +29,7 @@ export default function HeaderAnalyzer() {
     }
 
     // Look for Authentication-Results header
-    const authHeaderRegex = /^Authentication-Results:\s*([\s\S]*?)(?=^[A-Z][a-z0-9-]+:|\z)/im;
+    const authHeaderRegex = /^Authentication-Results:\s*([\s\S]*?)(?=^[A-Z][a-z0-9-]+:|$)/im;
     const authMatch = headers.match(authHeaderRegex);
 
     if (authMatch) {

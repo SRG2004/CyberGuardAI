@@ -103,15 +103,41 @@ export default function LinkScanner() {
           {scan.data.data.sources?.mlModel?.explainability?.length > 0 && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6">
               <h3 className="font-display font-semibold text-foreground text-sm mb-4 flex items-center gap-2">
-                <Brain className="w-4 h-4 text-primary" /> AI Reasoning (XAI)
+                <Brain className="w-4 h-4 text-primary" /> Deep XAI URL Analysis
               </h3>
+              
+              {/* Highlighted URL Box */}
+              <div className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-muted-foreground p-4 bg-muted/20 rounded-lg border border-border mb-4 overflow-x-auto break-all">
+                {(() => {
+                  const triggers = scan.data.data.sources.mlModel.explainability;
+                  if (!triggers || triggers.length === 0) return <span>{scan.data.data.input}</span>;
+                  const triggerWords = triggers.map((t: any) => t.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+                  const regex = new RegExp(`(${triggerWords.join('|')})`, 'gi');
+                  const parts = scan.data.data.input.split(regex);
+                  return parts.map((part: string, i: number) => {
+                    const isTrigger = triggers.some((t: any) => t.text.toLowerCase() === part.toLowerCase());
+                    if (isTrigger) {
+                      const info = triggers.find((t: any) => t.text.toLowerCase() === part.toLowerCase());
+                      return (
+                        <span key={i} title={info?.reason} className="bg-destructive/20 text-destructive font-bold px-1 py-0.5 rounded border border-destructive/30 shadow-[0_0_10px_rgba(239,68,68,0.3)] cursor-help">
+                          {part}
+                        </span>
+                      );
+                    }
+                    return <span key={i}>{part}</span>;
+                  });
+                })()}
+              </div>
+
               <div className="space-y-2">
-                {scan.data.data.sources.mlModel.explainability.map((exp: string, i: number) => {
-                  const isPos = exp.trim().startsWith('+');
+                {scan.data.data.sources.mlModel.explainability.map((exp: any, i: number) => {
                   return (
-                    <div key={i} className={`text-sm p-3 rounded-lg border flex items-start gap-2 ${isPos ? 'bg-destructive/10 border-destructive/20 text-destructive' : 'bg-safe/10 border-safe/20 text-safe'}`}>
-                      <span className="font-mono mt-0.5">{isPos ? '▲' : '▼'}</span>
-                      <span>{exp.replace(/^[+-]/, '').trim()}</span>
+                    <div key={i} className={`text-sm p-3 rounded-lg border flex items-start gap-2 bg-destructive/10 border-destructive/20 text-destructive`}>
+                      <span className="font-mono mt-0.5">▲</span>
+                      <div>
+                         <p className="font-bold">{exp.text} <span className="font-normal text-xs opacity-70 ml-2">({exp.type})</span></p>
+                         <p className="text-xs opacity-80 mt-1">{exp.reason}</p>
+                      </div>
                     </div>
                   );
                 })}

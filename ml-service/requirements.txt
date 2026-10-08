@@ -21,3 +21,6 @@ transformers>=4.35.0
 gradio>=5.0.0
 huggingface_hub>=0.25.0
 spaces
+opencv-python-headless>=4.8.0
+python-multipart>=0.0.6
+Levenshtein

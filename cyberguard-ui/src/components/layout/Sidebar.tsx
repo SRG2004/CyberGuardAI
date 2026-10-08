@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield, Link as LinkIcon, Mail, Globe, ClipboardList,
-  AlertTriangle, Puzzle, Settings, User, LogOut,
+  AlertTriangle, Puzzle, Settings, User, LogOut, QrCode,
   ChevronLeft, ChevronRight, LayoutDashboard, UserCog, Users, AlertOctagon, KeyRound, MessageSquareText, MonitorSmartphone, FileSearch, Link2, Fingerprint,
   Activity, Database, Brain
 } from 'lucide-react';
@@ -13,8 +13,9 @@ type NavItem = { path: string; label: string; icon: typeof Shield; roles: string
 
 const allNavItems: NavItem[] = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['student', 'admin'] },
-  { path: '/scanner', label: 'Link Scanner', icon: LinkIcon, roles: ['student'] },
-  { path: '/email-detector', label: 'Email Detector', icon: Mail, roles: ['student'] },
+  { path: '/link-scanner', label: 'Link Scanner', icon: LinkIcon, roles: ['student'] },
+  { path: '/email-scanner', label: 'Email Detector', icon: Mail, roles: ['student'] },
+  { path: '/qr-scanner', label: 'QR Scanner', icon: QrCode, roles: ['student'] },
   { path: '/threat-feed', label: 'Threat Feed', icon: Globe, roles: ['admin'] },
   { path: '/scan-history', label: 'Scan History', icon: ClipboardList, roles: ['student'] },
   { path: '/report', label: 'Threat Hunter', icon: AlertOctagon, roles: ['student', 'admin'] },

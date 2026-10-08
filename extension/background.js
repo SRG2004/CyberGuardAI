@@ -58,25 +58,46 @@ async function syncBlocklist() {
 // ─── DeclarativeNetRequest Dynamic Rules Update ─────────────
 async function updateDeclarativeRules(domains) {
   if (!chrome.declarativeNetRequest || !Array.isArray(domains)) return;
-  try {
-    const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
-    const removeRuleIds = existingRules.map(r => r.id);
+    try {
+      const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
+      const removeRuleIds = existingRules.map(r => r.id);
+  
+      const newRules = [];
+      const extensionUrl = chrome.runtime.getURL('block.html');
 
-    const newRules = domains.slice(0, 1000).map((domain, index) => ({
-      id: index + 100,
-      priority: 1,
-      action: { type: 'block' },
-      condition: {
-        urlFilter: `||${domain}^`,
-        resourceTypes: ['main_frame', 'sub_frame', 'script', 'xmlhttprequest']
-      }
-    }));
+      domains.slice(0, 500).forEach((domain, index) => {
+        const escapedDomain = domain.replace(/\./g, '\\.');
+        // Rule to redirect main frame navigations to our block page
+        newRules.push({
+          id: index * 2 + 100,
+          priority: 2,
+          action: { 
+            type: 'redirect',
+            redirect: { url: `${extensionUrl}?url=${encodeURIComponent('https://' + domain)}&score=100` }
+          },
+          condition: {
+            urlFilter: `||${domain}^`,
+            resourceTypes: ['main_frame']
+          }
+        });
 
-    await chrome.declarativeNetRequest.updateDynamicRules({
-      removeRuleIds: removeRuleIds,
-      addRules: newRules
-    });
-  } catch (err) {
+        // Rule to block subresources silently
+        newRules.push({
+          id: index * 2 + 101,
+          priority: 1,
+          action: { type: 'block' },
+          condition: {
+            urlFilter: `||${domain}^`,
+            resourceTypes: ['sub_frame', 'script', 'xmlhttprequest', 'image', 'stylesheet']
+          }
+        });
+      });
+  
+      await chrome.declarativeNetRequest.updateDynamicRules({
+        removeRuleIds: removeRuleIds,
+        addRules: newRules
+      });
+    } catch (err) {
     console.warn('[CyberGuard] DeclarativeNetRequest update error:', err);
   }
 }

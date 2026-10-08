@@ -14,6 +14,12 @@ export function useScanEmail() {
   });
 }
 
+export function useScanQR() {
+  return useMutation({
+    mutationFn: (formData: FormData) => api.multipartPost<ScanResponse>('/api/scan/qr', formData),
+  });
+}
+
 export function useBatchScan() {
   return useMutation({
     mutationFn: (data: { urls: string[] }) => api.post<ScanResponse[]>('/api/scan/batch', data),

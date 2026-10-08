@@ -59,10 +59,15 @@ if not "%MODE%"=="ml" (
 
 REM ─── Install ML deps ─────────────────────────────
 if not "%MODE%"=="frontend" (
-    python -c "import fastapi" 2>nul
-    if errorlevel 1 (
-        echo [INFO] Installing ML service dependencies...
+    if not exist "%ML%\venv" (
+        echo [INFO] Creating Python virtual environment...
         cd /d "%ML%"
+        python -m venv venv
+    )
+    if not exist "%ML%\venv\Lib\site-packages\fastapi" (
+        echo [INFO] Installing ML service dependencies in venv...
+        cd /d "%ML%"
+        call venv\Scripts\activate
         pip install -r requirements.txt --quiet
         if errorlevel 1 (
             echo [ERROR] ML pip install failed.
@@ -92,7 +97,7 @@ start "CyberGuard - Backend API" cmd /k "cd /d %BACKEND% && set NODE_ENV=develop
 timeout /t 2 /nobreak >nul
 
 if not "%MODE%"=="frontend" (
-    start "CyberGuard - ML Service" cmd /k "cd /d %ML% && python -m uvicorn main:app --host 0.0.0.0 --port 8001 --reload"
+    start "CyberGuard - ML Service" cmd /k "cd /d %ML% && call venv\Scripts\activate && python -m uvicorn main:app --host 0.0.0.0 --port 8001 --reload"
     timeout /t 2 /nobreak >nul
 )
 

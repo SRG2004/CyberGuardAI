@@ -1,19 +1,134 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #f3f4f6; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-.block-page { text-align: center; max-width: 600px; padding: 40px 20px; }
-.shield { font-size: 80px; margin-bottom: 20px; animation: pulse-red 2s infinite; }
-@keyframes pulse-red { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-h1 { color: #ef4444; font-size: 28px; margin-bottom: 12px; }
-.subtitle { color: #9ca3af; font-size: 14px; margin-bottom: 24px; }
-.risk-details { background: #111827; border: 1px solid #374151; border-radius: 12px; padding: 20px; margin: 20px 0; }
-.score-display { display: flex; justify-content: center; gap: 8px; font-size: 20px; font-weight: 700; margin-bottom: 16px; }
-.score-value { color: #ef4444; }
-.reason { display: flex; align-items: center; gap: 8px; padding: 8px 0; text-align: left; font-size: 13px; color: #d1d5db; }
-.reason-icon { font-size: 16px; }
-.blocked-url { background: #1f2937; border: 1px solid #ef4444; border-radius: 8px; padding: 12px; margin: 16px 0; font-size: 12px; color: #f87171; word-break: break-all; }
-.actions { display: flex; gap: 12px; justify-content: center; margin-top: 24px; }
-.btn { padding: 12px 24px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 600; }
-.btn-secondary { background: #374151; color: #d1d5db; }
-.btn-danger { background: #ef4444; color: white; }
-.btn-danger:disabled { background: #7f1d1d; cursor: not-allowed; }
-.countdown { color: #f59e0b; font-size: 12px; margin-top: 12px; }
+body { 
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+  background-color: #d32f2f; /* Aggressive Red */
+  color: #ffffff; 
+  min-height: 100vh; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+}
+.block-page { 
+  text-align: left; 
+  max-width: 680px; 
+  padding: 40px; 
+}
+.icon-container {
+  margin-bottom: 24px;
+}
+.warning-icon {
+  width: 64px;
+  height: 64px;
+  color: #ffffff;
+}
+h1 { 
+  font-size: 36px; 
+  font-weight: 400;
+  margin-bottom: 24px; 
+  letter-spacing: -0.5px;
+}
+.subtitle { 
+  font-size: 18px; 
+  line-height: 1.6;
+  margin-bottom: 32px; 
+  color: #ffffff;
+  opacity: 0.95;
+}
+.risk-details { 
+  background: rgba(0, 0, 0, 0.15); 
+  border-radius: 8px; 
+  padding: 24px; 
+  margin: 32px 0; 
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.score-display { 
+  font-size: 16px; 
+  font-weight: 600; 
+  margin-bottom: 16px; 
+}
+.score-value { 
+  color: #ffb74d; 
+  font-weight: 700;
+  margin-left: 8px;
+}
+.reasons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.reason { 
+  display: flex; 
+  align-items: flex-start; 
+  gap: 12px; 
+  font-size: 14px; 
+  color: #f5f5f5; 
+  line-height: 1.4;
+}
+.actions { 
+  margin-top: 32px; 
+  margin-bottom: 40px;
+}
+.btn { 
+  padding: 10px 24px; 
+  border: none; 
+  border-radius: 4px; 
+  font-size: 14px; 
+  cursor: pointer; 
+  font-weight: 600; 
+  transition: all 0.2s;
+}
+.btn-primary { 
+  background: #ffffff; 
+  color: #d32f2f; 
+}
+.btn-primary:hover {
+  background: #f5f5f5;
+}
+.btn-text {
+  background: none;
+  border: none;
+  color: #ffffff;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 8px 0;
+  opacity: 0.8;
+}
+.btn-text:hover {
+  opacity: 1;
+}
+.details-section {
+  border-top: 1px solid rgba(255,255,255,0.2);
+  padding-top: 24px;
+}
+.details-content {
+  margin-top: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.9);
+}
+.details-content p {
+  margin-bottom: 12px;
+}
+.details-content.hidden {
+  display: none;
+}
+.url-display { 
+  font-family: monospace;
+  background: rgba(0,0,0,0.2);
+  padding: 8px;
+  border-radius: 4px;
+  word-break: break-all;
+}
+.proceed-container {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.countdown { 
+  color: #ffb74d; 
+  font-size: 13px; 
+  font-weight: 500;
+}

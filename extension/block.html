@@ -3,30 +3,46 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CyberGuard — Site Blocked</title>
+  <title>CyberGuard - Deceptive site ahead</title>
   <link rel="stylesheet" href="block.css">
 </head>
 <body>
   <div class="block-page">
-    <div class="shield"><span class="icon">\uD83D\uDEE1\uFE0F</span></div>
-    <h1>DANGER — This site may steal your information</h1>
-    <p class="subtitle">CyberGuard AI has detected potential phishing or malicious activity on this website.</p>
+    <div class="icon-container">
+      <svg class="warning-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+      </svg>
+    </div>
+    
+    <h1>Deceptive site ahead</h1>
+    
+    <p class="subtitle">
+      Attackers on <strong id="blocked-domain">this site</strong> may trick you into doing something dangerous like installing software or revealing your personal information (for example, passwords, phone numbers, or credit cards).
+    </p>
 
     <div class="risk-details" id="risk-details">
       <div class="score-display">
-        <span class="score-label">Risk Score</span>
+        <span class="score-label">CyberGuard ML Risk Score:</span>
         <span class="score-value" id="risk-score">--</span>
       </div>
       <div class="reasons" id="risk-reasons"></div>
     </div>
 
-    <div class="blocked-url" id="blocked-url"></div>
-
     <div class="actions">
-      <button id="go-back" class="btn btn-secondary">Go Back to Safety</button>
-      <button id="proceed" class="btn btn-danger">I Understand the Risks</button>
+      <button id="go-back" class="btn btn-primary">Back to safety</button>
     </div>
-    <div class="countdown" id="countdown"></div>
+    
+    <div class="details-section">
+      <button id="toggle-details" class="btn-text">Details</button>
+      <div id="details-content" class="details-content hidden">
+        <p>CyberGuard AI analyzed this page and strongly advises you to not continue. Ignoring this warning may compromise your device or accounts.</p>
+        <p class="url-display">Blocked URL: <br><span id="blocked-url"></span></p>
+        <div class="proceed-container">
+          <button id="proceed" class="btn-text btn-danger">Proceed to this unsafe site</button>
+          <div class="countdown" id="countdown"></div>
+        </div>
+      </div>
+    </div>
   </div>
   <script src="block.js"></script>
 </body>

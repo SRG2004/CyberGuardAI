@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { MessageSquareText, ShieldAlert, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
+import { MessageSquareText, AlertCircle, CheckCircle2, AlertTriangle, Loader2, Brain, ShieldAlert } from 'lucide-react';
 import { useScanEmail } from '@/hooks/api/useScans';
 import { GlowButton } from '@/components/ui/GlowButton';
 
@@ -17,16 +17,16 @@ export default function SmsScanner() {
       const result = await scanEmail.mutateAsync({ subject: 'SMS Message', body: smsContent });
       const score = Math.round(result.data.riskScore || 0);
 
-      const parsedSignals = (result.data.emailHighlights || result.data.emailSignals || []).map(
-        (s: { type?: string; text?: string; severity?: string; start?: string; reason?: string; color?: string }) => ({
-          text: s.reason || s.type || 'Suspicious Pattern',
-          level: s.severity === 'high' || s.severity === 'medium' ? 'danger' : s.severity === 'low' ? 'safe' : 'warning',
-          detail: s.text || s.reason || '',
+      const parsedSignals = (result.data.explainability || []).map(
+        (s: any) => ({
+          text: s.text || s.type || 'Suspicious Pattern',
+          level: s.severity === 'high' || s.severity === 'medium' || s.severity === 'critical' ? 'danger' : s.severity === 'low' ? 'safe' : 'warning',
+          detail: s.reason || '',
         })
       );
 
       if (parsedSignals.length === 0) {
-        if (result.data.verdict === 'mailicious' || score >= 70) {
+        if (result.data.verdict === 'phishing' || score >= 70) {
           parsedSignals.push({ text: 'High smishing risk detected', level: 'danger', detail: `ML score: ${score}%` });
         }
         parsedSignals.push({ text: result.data.verdict || 'Analysis complete', level: score >= 50 ? 'warning' : 'safe', detail: `Risk score: ${score}` });
@@ -38,7 +38,7 @@ export default function SmsScanner() {
     }
   };
 
-  const score = scanEmail.data ? Math.round(scanEmail.data.riskScore || 0) : 0;
+  const score = scanEmail.data ? Math.round(scanEmail.data.data?.riskScore || 0) : 0;
   const analyzed = scanEmail.data !== undefined;
 
   return (
@@ -77,6 +77,52 @@ export default function SmsScanner() {
                 {score >= 70 ? <ShieldAlert className="w-12 h-12 text-destructive opacity-20" /> : score >= 40 ? <AlertTriangle className="w-12 h-12 text-warning opacity-20" /> : <CheckCircle2 className="w-12 h-12 text-safe opacity-20" />}
               </div>
             </div>
+
+            {/* AI Reasoning (XAI) */}
+            {scanEmail.data?.data?.explainability?.length > 0 && (
+              <div className="glass-card p-6">
+                <h3 className="font-display font-semibold text-foreground text-sm mb-4 flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-primary" /> Deep XAI Text Analysis
+                </h3>
+                
+                {/* Highlighted Text Box */}
+                <div className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-muted-foreground p-4 bg-muted/20 rounded-lg border border-border mb-4 max-h-60 overflow-y-auto">
+                  {(() => {
+                    const triggers = scanEmail.data.data.explainability;
+                    if (!triggers || triggers.length === 0) return <span>{smsContent}</span>;
+                    const triggerWords = triggers.map((t: any) => t.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+                    const regex = new RegExp(`(${triggerWords.join('|')})`, 'gi');
+                    const parts = smsContent.split(regex);
+                    return parts.map((part: string, i: number) => {
+                      const isTrigger = triggers.some((t: any) => t.text.toLowerCase() === part.toLowerCase());
+                      if (isTrigger) {
+                        const info = triggers.find((t: any) => t.text.toLowerCase() === part.toLowerCase());
+                        return (
+                          <span key={i} title={info?.reason} className="bg-destructive/20 text-destructive font-bold px-1 py-0.5 rounded border border-destructive/30 shadow-[0_0_10px_rgba(239,68,68,0.3)] cursor-help">
+                            {part}
+                          </span>
+                        );
+                      }
+                      return <span key={i}>{part}</span>;
+                    });
+                  })()}
+                </div>
+
+                <div className="space-y-2">
+                  {scanEmail.data.data.explainability.map((exp: any, i: number) => {
+                    return (
+                      <div key={i} className={`text-sm p-3 rounded-lg border flex items-start gap-2 bg-destructive/10 border-destructive/20 text-destructive`}>
+                        <span className="font-mono mt-0.5">▲</span>
+                        <div>
+                           <p className="font-bold">{exp.text} <span className="font-normal text-xs opacity-70 ml-2">({exp.type})</span></p>
+                           <p className="text-xs opacity-80 mt-1">{exp.reason}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <div className="glass-card p-6">
               <h3 className="text-sm font-semibold text-foreground mb-4">Detection Signals</h3>

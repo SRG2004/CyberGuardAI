@@ -16,6 +16,8 @@ export default function UrlUnshortener() {
   const [url, setUrl] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<UnshortenResult | null>(null);
+  const [traceroute, setTraceroute] = useState<string | null>(null);
+  const [isTracingRoute, setIsTracingRoute] = useState(false);
 
   const handleAnalyze = async () => {
     if (!url) return;
@@ -33,6 +35,12 @@ export default function UrlUnshortener() {
       const response = await api.post<UnshortenResult>('/api/tools/unshorten', { url: targetUrl });
       if (response.data) {
         setResult(response.data);
+        // Start traceroute on final destination
+        setIsTracingRoute(true);
+        api.post<{rawOutput: string}>('/api/tools/traceroute', { url: response.data.finalUrl })
+          .then(res => setTraceroute(res.data.rawOutput))
+          .catch(() => setTraceroute('Traceroute failed to complete.'))
+          .finally(() => setIsTracingRoute(false));
       }
     } catch (err: any) {
       toast.error('Analysis failed', { description: err.message || 'Network error occurred.' });
@@ -147,6 +155,21 @@ export default function UrlUnshortener() {
                     ))}
                   </div>
                 </div>
+
+                {/* Traceroute Section */}
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Network Hops (tracert)</h4>
+                  <div className="p-4 rounded-xl border border-border/50 bg-background/50 font-mono text-[10px] sm:text-xs overflow-x-auto whitespace-pre">
+                    {isTracingRoute ? (
+                      <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
+                        <Loader2 className="w-4 h-4 animate-spin" /> Running tracert to final destination...
+                      </div>
+                    ) : traceroute ? (
+                      <div className="text-muted-foreground leading-relaxed">{traceroute}</div>
+                    ) : null}
+                  </div>
+                </div>
+
               </div>
             )}
           </div>

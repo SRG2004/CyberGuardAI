@@ -1,13 +1,14 @@
 import os
 import time
 from typing import Dict, List, Optional
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, File, UploadFile
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import joblib
 import numpy as np
 import re
+import cv2
 
 app = FastAPI(title="CyberGuard ML Service", version="3.0.0")
 
@@ -59,6 +60,61 @@ class PageRequest(BaseModel):
     js_signals: List[dict] = []
     redirect_chain: List[str] = []
 
+
+# ── Deep XAI Trigger Extraction ───────────────────────────────────────
+def _extract_triggers(text: str, analysis_type: str) -> List[Dict[str, str]]:
+    """Extracts psychological or structural triggers for Deep XAI highlighting."""
+    triggers = []
+    text_lower = text.lower()
+    
+    if analysis_type == 'email':
+        keywords = [
+            "urgent", "locked", "verify", "click here", "gift card", 
+            "unpaid", "free", "paypal", "password", "bank", "winner",
+            "claim", "suspend", "action required"
+        ]
+        for kw in keywords:
+            if kw in text_lower:
+                triggers.append({"text": kw, "type": "Psychological Manipulation", "severity": "high", "reason": f"Urgency/financial keyword '{kw}' detected"})
+    
+    elif analysis_type == 'url':
+        # Check for IP address
+        if re.search(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', text):
+            triggers.append({"text": re.search(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', text).group(), "type": "IP Address Masking", "severity": "high", "reason": "URL uses an IP address instead of a domain name"})
+        
+        # Check for multiple subdomains
+        parts = text.replace('https://', '').replace('http://', '').split('/')[0].split('.')
+        if len(parts) > 3:
+            triggers.append({"text": '.'.join(parts), "type": "Subdomain Nesting", "severity": "medium", "reason": "Excessive subdomains often used to obfuscate the true domain"})
+            
+        # Check for brand names in path
+        brands = ['paypal', 'apple', 'google', 'amazon', 'microsoft', 'netflix', 'facebook']
+        path = '/'.join(text.split('/')[3:])
+        for brand in brands:
+            if brand in path.lower():
+                triggers.append({"text": brand, "type": "Brand Spoofing", "severity": "high", "reason": f"Brand name '{brand}' found in path instead of domain"})
+
+        # Check for Punycode (Homograph attack)
+        if 'xn--' in text_lower:
+            triggers.append({"text": "xn--", "type": "Homograph Attack", "severity": "critical", "reason": "Punycode detected, which is often used to spoof characters"})
+            
+        # Check for Typo-squatting using Levenshtein distance
+        try:
+            from Levenshtein import distance as levenshtein_distance
+            domain = text_lower.replace('https://', '').replace('http://', '').split('/')[0]
+            domain_parts = domain.split('.')
+            if len(domain_parts) >= 2:
+                # E.g. www.paypa1.com -> paypa1
+                main_word = domain_parts[-2]
+                trusted_brands = ['paypal', 'apple', 'google', 'amazon', 'microsoft', 'netflix', 'facebook', 'chase', 'wellsfargo', 'citibank', 'instagram', 'twitter']
+                for brand in trusted_brands:
+                    dist = levenshtein_distance(main_word, brand)
+                    if 0 < dist <= 2:
+                        triggers.append({"text": main_word, "type": "Typo-squatting", "severity": "high", "reason": f"Domain '{main_word}' is suspiciously similar to trusted brand '{brand}'"})
+        except ImportError:
+            pass
+
+    return triggers
 
 # ── Transformer helper ────────────────────────────────────────────────
 def _transformer_predict(model_dict, text: str, max_length: int = 128) -> float:
@@ -171,6 +227,33 @@ def startup():
     print(f"  Transformer models loaded: {loaded}/2")
 
 
+# ── /predict/qr ───────────────────────────────────────────────────────
+@app.post("/predict/qr")
+async def predict_qr(file: UploadFile = File(...)):
+    try:
+        import cv2
+        import numpy as np
+        
+        contents = await file.read()
+        nparr = np.frombuffer(contents, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        if img is None:
+            raise HTTPException(status_code=400, detail="Invalid image file")
+            
+        detector = cv2.QRCodeDetector()
+        data, bbox, _ = detector.detectAndDecode(img)
+        
+        if not data:
+            return {"verdict": "safe", "url": "", "error": "No QR code found"}
+            
+        # Treat the decoded data as a URL and pass it to the URL predictor
+        req = UrlRequest(url=data)
+        return predict_url(req)
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"QR detection failed: {e}")
+
 # ── Health Check ──────────────────────────────────────────────────────
 @app.get("/health")
 def health_check():
@@ -231,6 +314,7 @@ def model_info():
 # ── /predict/url ──────────────────────────────────────────────────────
 @app.post("/predict/url")
 def predict_url(req: UrlRequest):
+    global url_model, url_transformer
     import requests
     
     # ── 1. Real-Time Cross-Reference Layer (URLhaus) ──────────────
@@ -240,15 +324,12 @@ def predict_url(req: UrlRequest):
             data = urlhaus_resp.json()
             if data.get('query_status') == 'ok' and data.get('url_status') == 'online':
                 return {
-                    "score": 1.0,
-                    "label": "phishing",
-                    "features": ["verified_malicious"],
-                    "confidence": 1.0,
-                    "model_type": "threat_intel_api",
-                    "model_accuracy": 1.0,
-                    "transformer_enhanced": False,
-                    "explainability": ["+100.0% risk due to Verified by URLhaus (Abuse.ch)"],
-                    "breakdown": { "feature_score": 1.0, "transformer_score": 1.0 }
+                    "url": req.url,
+                    "verdict": "phishing",
+                    "riskScore": 100.0,
+                    "confidence": 100.0,
+                    "xai_analysis": [{"text": "Verified by URLhaus", "type": "Threat Intel", "severity": "critical", "reason": "URL flagged by Abuse.ch"}],
+                    "details": {"base_score": 1.0, "transformer_score": 1.0}
                 }
     except Exception as e:
         pass # Silently fallback to ML if API fails or times out
@@ -262,7 +343,6 @@ def predict_url(req: UrlRequest):
         X = np.array([feature_order], dtype=np.float64)
         X = np.nan_to_num(X, nan=0.0, posinf=1e6, neginf=-1e6)
 
-        # Feature-based model probability
         if hasattr(url_model['pipeline'], 'predict_proba'):
             prob = url_model['pipeline'].predict_proba(X)[0]
             feature_prob = float(prob[1]) if len(prob) > 1 else 0.0
@@ -270,99 +350,25 @@ def predict_url(req: UrlRequest):
             prediction = url_model['pipeline'].predict(X)[0]
             feature_prob = float(prediction)
 
-        # ── Transformer ensemble ──────────────────────────────
         transformer_score = -1.0
         if url_transformer is not None:
-            transformer_score = _transformer_predict(
-                url_transformer,
-                req.url,
-                max_length=128,
-            )
+            transformer_score = _transformer_predict(url_transformer, req.url, max_length=128)
 
-        # Ensemble: 40% transformer + 60% feature-model (if transformer is available)
-        if transformer_score >= 0:
-            phishing_prob = 0.4 * transformer_score + 0.6 * feature_prob
-        else:
-            phishing_prob = feature_prob
+        phishing_prob = (0.4 * transformer_score + 0.6 * feature_prob) if transformer_score >= 0 else feature_prob
 
-        # Determine features that contributed
-        active_features = []
-        if features.get('has_at', 0) == 1:
-            active_features.append('at_symbol_in_url')
-        if features.get('has_ip_address', 0) == 1:
-            active_features.append('ip_address_in_url')
-        if features.get('phishing_keywords', 0) > 0:
-            active_features.append(f'{features["phishing_keywords"]}_phishing_keywords')
-        if features.get('domain_entropy', 0) > 3.5:
-            active_features.append('high_domain_entropy')
-        if features.get('subdomain_count', 0) > 2:
-            active_features.append('excessive_subdomains')
-        if features.get('url_length', 0) > 75:
-            active_features.append('long_url')
-        if features.get('shortener', 0) == 1:
-            active_features.append('url_shortener')
-        if features.get('has_punycode', 0) == 1:
-            active_features.append('punycode_idn_attack')
-        if features.get('brand_in_subdomain', 0) == 1:
-            active_features.append('brand_impersonation')
-        if features.get('brand_similarity', 1.0) < 0.3:
-            active_features.append('typosquatting_detected')
-        if features.get('tld_risk_score', 0) > 0.7:
-            active_features.append('high_risk_tld')
-        if features.get('suspicious_tld_combo', 0) == 1:
-            active_features.append('suspicious_tld_keyword_combo')
-        if features.get('has_hex_chars', 0) > 3:
-            active_features.append('url_obfuscation')
-        if features.get('path_has_suspicious_ext', 0) == 1:
-            active_features.append('suspicious_file_extension')
-        if features.get('port_present', 0) == 1:
-            active_features.append('non_standard_port')
-
-        if transformer_score >= 0 and transformer_score > 0.5:
-            active_features.append('transformer_phishing_signal')
-
-        label = 'phishing' if phishing_prob > 0.5 else 'legitimate'
-        
-        # ── 3. Explainable AI (XAI) Integration ────────────────────
-        explainability = []
-        try:
-            # Try basic feature impact estimation (since exact SHAP on Pipeline requires tree explainer on scaled data)
-            classifier = url_model['pipeline'].steps[-1][1]
-            if hasattr(classifier, 'feature_importances_'):
-                importances = classifier.feature_importances_
-                fnames = url_model['feature_names']
-                
-                # Scale by actual feature presence
-                impacts = [(fnames[i], float(importances[i]) * float(X[0][i])) for i in range(len(importances))]
-                impacts.sort(key=lambda x: abs(x[1]), reverse=True)
-                
-                total_impact = sum(abs(v) for _, v in impacts) + 1e-6
-                for fname, imp in impacts[:5]:
-                    if abs(imp) > 0.001:
-                        percent = (abs(imp) / total_impact) * (phishing_prob * 100)
-                        if percent > 1.0:
-                            direction = "+" if phishing_prob > 0.5 else "-"
-                            explainability.append(f"{direction}{percent:.1f}% risk due to {fname}")
-                            
-            if transformer_score >= 0 and transformer_score > 0.6:
-                explainability.append(f"+{(transformer_score * 40):.1f}% risk due to deep semantic transformer match")
-                
-        except Exception:
-            explainability = ["+ ML model internal features matched"]
+        is_phishing = phishing_prob > 0.5
+        xai_analysis = _extract_triggers(req.url, 'url') if is_phishing else []
 
         return {
-            "score": round(phishing_prob, 4),
-            "label": label,
-            "features": active_features if active_features else ['baseline_features'],
-            "confidence": round(max(phishing_prob, 1 - phishing_prob), 4),
-            "model_type": url_model.get('model_type', 'unknown'),
-            "model_accuracy": url_model.get('accuracy', 0),
-            "transformer_enhanced": transformer_score >= 0,
-            "explainability": explainability,
-            "breakdown": {
-                "feature_score": round(feature_prob, 4),
-                "transformer_score": round(transformer_score, 4) if transformer_score >= 0 else None,
-            },
+            "url": req.url,
+            "verdict": "phishing" if is_phishing else "safe",
+            "riskScore": float(phishing_prob * 100),
+            "confidence": float(max(phishing_prob, 1 - phishing_prob) * 100),
+            "xai_analysis": xai_analysis,
+            "details": {
+                "base_score": float(feature_prob),
+                "transformer_score": float(transformer_score) if transformer_score >= 0 else None
+            }
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
@@ -371,13 +377,13 @@ def predict_url(req: UrlRequest):
 # ── /predict/email ────────────────────────────────────────────────────
 @app.post("/predict/email")
 def predict_email(req: EmailRequest):
+    global email_model, email_transformer
     try:
         from preprocess import clean_email_text, extract_email_features
 
         email_feats = extract_email_features(req.subject, req.body)
-
-        # Text probability — prefer Transformer, fall back to TF-IDF
         cleaned = clean_email_text(f"{req.subject} {req.body}")
+        
         text_prob = 0.0
         used_transformer = False
 
@@ -457,15 +463,18 @@ def predict_email(req: EmailRequest):
         if used_transformer:
             signals.append({"type": "transformer_analysis", "text": "Deep learning text analysis applied", "severity": "info"})
 
+        xai_analysis = _extract_triggers(req.subject + " " + req.body, 'email') if label == 'phishing' else []
+
         return {
-            "score": round(float(combined), 4),
-            "label": label,
-            "signals": signals,
-            "highlights": highlights,
-            "urgency_score": round(urgency, 4),
-            "text_probability": round(text_prob, 4),
-            "transformer_enhanced": used_transformer,
-            "explainability": explainability,
+            "verdict": label,
+            "riskScore": float(combined * 100),
+            "confidence": float(max(combined, 1 - combined) * 100),
+            "xai_analysis": xai_analysis,
+            "details": {
+                "base_score": float(combined),
+                "transformer_score": float(text_prob) if used_transformer else None,
+                "urgency_score": float(urgency)
+            }
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Email prediction failed: {str(e)}")

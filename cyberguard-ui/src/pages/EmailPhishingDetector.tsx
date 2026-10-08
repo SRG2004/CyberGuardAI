@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, AlertCircle, CheckCircle, AlertTriangle, Info, Brain } from 'lucide-react';
 import { useScanEmail } from '@/hooks/api/useScans';
@@ -21,17 +21,17 @@ export default function EmailPhishingDetector() {
       const result = await scanEmail.mutateAsync({ subject, body: emailContent });
       const score = Math.round(result.data.riskScore || 0);
 
-      const parsedSignals = (result.data.emailHighlights || result.data.emailSignals || []).map(
+      const parsedSignals = (result.data.xai_analysis || result.data.explainability || []).map(
         (s: { type?: string; text?: string; severity?: string; start?: string; reason?: string; color?: string }) => ({
-          text: s.reason || s.type || 'Unknown Signal',
-          level: s.severity === 'high' || s.severity === 'medium' ? 'danger' : s.severity === 'low' ? 'safe' : 'warning',
-          detail: s.text || s.reason || '',
+          text: s.text || s.type || 'Unknown Signal',
+          level: s.severity === 'high' || s.severity === 'medium' || s.severity === 'critical' ? 'danger' : s.severity === 'low' ? 'safe' : 'warning',
+          detail: s.reason || s.text || '',
         })
       );
 
       // Fallback: derive signals from the response
       if (parsedSignals.length === 0) {
-        if (result.data.verdict === 'mailicious' || score >= 70) {
+        if (result.data.verdict === 'phishing' || score >= 70) {
           parsedSignals.push({ text: 'High phishing risk detected', level: 'danger', detail: `ML score: ${score}%` });
         }
         parsedSignals.push({ text: result.data.verdict || 'Analysis complete', level: score >= 50 ? 'warning' : 'safe', detail: `Risk score: ${score}` });
@@ -43,7 +43,7 @@ export default function EmailPhishingDetector() {
     }
   };
 
-  const score = scanEmail.data ? Math.round(scanEmail.data.riskScore || 0) : 0;
+  const score = scanEmail.data ? Math.round(scanEmail.data.data?.riskScore || 0) : 0;
   const analyzed = scanEmail.data !== undefined;
 
   return (
@@ -56,16 +56,18 @@ export default function EmailPhishingDetector() {
         <input
           value={subject}
           onChange={e => setSubject(e.target.value)}
+          placeholder="Email Subject (optional)"
           className="w-full h-10 px-4 rounded-lg bg-muted/50 border border-border text-sm text-foreground focus:outline-none focus:border-primary/50 transition-all"
         />
         <textarea
           value={emailContent}
           onChange={e => setEmailContent(e.target.value)}
           rows={16}
+          placeholder="Paste the email body content here to analyze for phishing signals..."
           className="w-full px-4 py-3 rounded-lg bg-muted/50 border border-border text-sm text-foreground font-mono focus:outline-none focus:border-primary/50 resize-none transition-all"
         />
-        <GlowButton onClick={handleAnalyze} className="w-full" size="lg" disabled={scanEmail.isLoading}>
-          {scanEmail.isLoading ? 'Analyzing...' : 'Analyze Email'}
+        <GlowButton onClick={handleAnalyze} className="w-full" size="lg" disabled={scanEmail.isPending}>
+          {scanEmail.isPending ? 'Analyzing...' : 'Analyze Email'}
         </GlowButton>
       </motion.div>
 
@@ -85,24 +87,53 @@ export default function EmailPhishingDetector() {
             </div>
 
             {/* AI Reasoning (XAI) */}
-            {scanEmail.data?.explainability?.length > 0 && (
+            {(scanEmail.data?.data?.xai_analysis?.length > 0 || scanEmail.data?.data?.explainability?.length > 0) && (() => {
+              const xaiData = scanEmail.data.data.xai_analysis || scanEmail.data.data.explainability || [];
+              return (
               <div className="glass-card p-6">
                 <h3 className="font-display font-semibold text-foreground text-sm mb-4 flex items-center gap-2">
-                  <Brain className="w-4 h-4 text-primary" /> AI Reasoning (XAI)
+                  <Brain className="w-4 h-4 text-primary" /> Deep XAI Text Analysis
                 </h3>
+                
+                {/* Highlighted Text Box */}
+                <div className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-muted-foreground p-4 bg-muted/20 rounded-lg border border-border mb-4 max-h-60 overflow-y-auto">
+                  {(() => {
+                    const triggers = xaiData;
+                    if (!triggers || triggers.length === 0) return <span>{emailContent}</span>;
+                    const triggerWords = triggers.map((t: any) => t.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+                    const regex = new RegExp(`(${triggerWords.join('|')})`, 'gi');
+                    const parts = emailContent.split(regex);
+                    return parts.map((part: string, i: number) => {
+                      const isTrigger = triggers.some((t: any) => t.text.toLowerCase() === part.toLowerCase());
+                      if (isTrigger) {
+                        const info = triggers.find((t: any) => t.text.toLowerCase() === part.toLowerCase());
+                        return (
+                          <span key={i} title={info?.reason} className="bg-destructive/20 text-destructive font-bold px-1 py-0.5 rounded border border-destructive/30 shadow-[0_0_10px_rgba(239,68,68,0.3)] cursor-help">
+                            {part}
+                          </span>
+                        );
+                      }
+                      return <span key={i}>{part}</span>;
+                    });
+                  })()}
+                </div>
+
                 <div className="space-y-2">
-                  {scanEmail.data.explainability.map((exp: string, i: number) => {
-                    const isPos = exp.trim().startsWith('+');
+                  {xaiData.map((exp: any, i: number) => {
                     return (
-                      <div key={i} className={`text-sm p-3 rounded-lg border flex items-start gap-2 ${isPos ? 'bg-destructive/10 border-destructive/20 text-destructive' : 'bg-safe/10 border-safe/20 text-safe'}`}>
-                        <span className="font-mono mt-0.5">{isPos ? '▲' : '▼'}</span>
-                        <span>{exp.replace(/^[+-]/, '').trim()}</span>
+                      <div key={i} className={`text-sm p-3 rounded-lg border flex items-start gap-2 bg-destructive/10 border-destructive/20 text-destructive`}>
+                        <span className="font-mono mt-0.5">▲</span>
+                        <div>
+                           <p className="font-bold">{exp.text} <span className="font-normal text-xs opacity-70 ml-2">({exp.type})</span></p>
+                           <p className="text-xs opacity-80 mt-1">{exp.reason}</p>
+                        </div>
                       </div>
                     );
                   })}
                 </div>
               </div>
-            )}
+              );
+            })()}
 
             {/* Signals */}
             <div className="glass-card p-6">

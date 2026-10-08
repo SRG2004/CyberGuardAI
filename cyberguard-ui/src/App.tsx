@@ -11,6 +11,7 @@ const Login = lazy(() => import("./pages/Login"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const LinkScanner = lazy(() => import("./pages/LinkScanner"));
 const EmailPhishingDetector = lazy(() => import("./pages/EmailPhishingDetector"));
+const QRScanner = lazy(() => import("./pages/QRScanner"));
 const ThreatFeed = lazy(() => import("./pages/ThreatFeed"));
 const ScanHistory = lazy(() => import("./pages/ScanHistory"));
 const ThreatHunter = lazy(() => import("./pages/ThreatHunter"));
@@ -85,8 +86,9 @@ const App = () => {
                 {/* Shared routes - all authenticated users */}
                 <Route element={<ProtectedRoute />}>
                   <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/scanner" element={<LinkScanner />} />
-                  <Route path="/email-detector" element={<EmailPhishingDetector />} />
+                  <Route path="/link-scanner" element={<LinkScanner />} />
+                  <Route path="/email-scanner" element={<EmailPhishingDetector />} />
+                  <Route path="/qr-scanner" element={<QRScanner />} />
                   <Route path="/threat-feed" element={<ThreatFeed />} />
                   <Route path="/scan-history" element={<ScanHistory />} />
                   <Route path="/report" element={<ThreatHunter />} />

@@ -16,7 +16,7 @@ export async function scanEmail(subject, body, userId = null, source = 'dashboar
   const mlResult = await predictEmailMl(subject, body);
 
   // Calculate risk score from ML
-  const riskScore = Math.round((mlResult.score || 0) * 100);
+  const riskScore = Math.round(mlResult.score || 0);
   const verdict = getVerdict(riskScore);
 
   const type = riskScore > 60 ? 'phishing' : riskScore > 30 ? 'suspicious' : 'safe';

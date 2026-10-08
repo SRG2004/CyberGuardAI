@@ -1,6 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
   const blockedUrl = params.get('url') || 'Unknown URL';
+  
+  try {
+    const urlObj = new URL(blockedUrl);
+    document.getElementById('blocked-domain').textContent = urlObj.hostname;
+  } catch (e) {
+    document.getElementById('blocked-domain').textContent = 'this site';
+  }
 
   document.getElementById('blocked-url').textContent = decodeURIComponent(blockedUrl);
 
@@ -9,14 +16,27 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('risk-score').textContent = score === '--' ? 'HIGH' : `${score}/100`;
 
   document.getElementById('risk-reasons').innerHTML = `
-    <div class="reason"><span class="reason-icon">\uD83D\uDD34</span><span class="reason-text">Flagged as potentially malicious by AI analysis</span></div>
-    <div class="reason"><span class="reason-icon">\u26A0\uFE0F</span><span class="reason-text">This site may attempt to steal personal information</span></div>
-    <div class="reason"><span class="reason-icon">\uD83D\uDEAB</span><span class="reason-text">Navigate back or close this tab immediately</span></div>
+    <div class="reason"><span class="reason-icon">⚠️</span><span class="reason-text">Flagged as malicious by CyberGuard Deep XAI analysis.</span></div>
+    <div class="reason"><span class="reason-icon">⛔</span><span class="reason-text">This site is known to attempt to steal user credentials or install malware.</span></div>
   `;
 
   // Go back
   document.getElementById('go-back').addEventListener('click', () => {
     window.history.back();
+    // Fallback if history is empty
+    setTimeout(() => {
+      window.close();
+    }, 500);
+  });
+
+  // Toggle details
+  document.getElementById('toggle-details').addEventListener('click', () => {
+    const details = document.getElementById('details-content');
+    if (details.classList.contains('hidden')) {
+      details.classList.remove('hidden');
+    } else {
+      details.classList.add('hidden');
+    }
   });
 
   // Proceed with countdown
@@ -32,8 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (count <= 0) {
           clearInterval(interval);
           document.getElementById('countdown').textContent = '';
-          document.getElementById('proceed').disabled = false;
-          document.getElementById('proceed').textContent = 'Proceed Anyway';
+          document.getElementById('proceed').textContent = 'Proceed (Unsafe)';
           document.getElementById('proceed').addEventListener('click', () => {
             window.location.href = decodeURIComponent(blockedUrl);
           }, { once: true });

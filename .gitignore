@@ -15,10 +15,15 @@ dist/
 build/
 *.egg-info/
 
-# ML artifacts (large data files only — models ARE committed)
+# ML artifacts and large model files (IGNORE TO SAVE GITHUB STORAGE/LFS COSTS)
 ml-service/data/*.csv
 ml-service/data/*.bz2
 ml-service/data/.cache/
+ml-service/models/
+*.pkl
+*.onnx
+*.bin
+*.h5
 
 # Logs
 logs/
