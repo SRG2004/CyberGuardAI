@@ -95,16 +95,15 @@ router.post('/traceroute', scanUserRateLimit, async (req, res) => {
       return res.status(400).json({ success: false, error: { message: 'Invalid hostname' } });
     }
 
-    const isWin = process.platform === 'win32';
-    // Limit to 15 hops to avoid long execution times
-    const cmd = isWin ? `tracert -d -h 15 ${hostname}` : `traceroute -m 15 -n ${hostname}`;
-    
-    const { stdout } = await execPromise(cmd);
+    // Use an external API for traceroute since cloud platforms (Render/Vercel) block raw ICMP sockets
+    const response = await axios.get(`https://api.hackertarget.com/mtr/?q=${hostname}`, {
+      timeout: 10000 // 10 second timeout
+    });
     
     res.json({
       success: true,
       data: {
-        rawOutput: stdout,
+        rawOutput: response.data,
         hostname
       }
     });

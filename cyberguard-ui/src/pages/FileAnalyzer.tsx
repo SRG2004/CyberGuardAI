@@ -211,7 +211,11 @@ export default function FileAnalyzer() {
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium">{fileInfo.entropy.toFixed(2)} / 8</p>
                         {fileInfo.entropy > 7.5 ? (
-                          <span className="text-[10px] font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded">High (Packed/Encrypted?)</span>
+                          fileInfo.type && (fileInfo.type.includes('image/') || fileInfo.type.includes('video/') || fileInfo.type.includes('zip') || fileInfo.type.includes('pdf') || fileInfo.type.includes('rar') || fileInfo.type.includes('gzip')) ? (
+                            <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">High (Compressed)</span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded">High (Packed/Encrypted?)</span>
+                          )
                         ) : (
                           <span className="text-[10px] font-bold text-safe bg-safe/10 px-2 py-0.5 rounded">Normal</span>
                         )}
