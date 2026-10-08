@@ -15,10 +15,12 @@ services:
     region: oregon
     plan: free
     rootDir: backend
-    buildCommand: npm ci --omit=dev
+    buildCommand: ./render-build.sh
     startCommand: node src/server.js
     healthCheckPath: /health
     envVars:
+      - key: PUPPETEER_CACHE_DIR
+        value: "/opt/render/project/puppeteer"
       - key: NODE_ENV
         value: production
       - key: PORT
