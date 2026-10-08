@@ -1,70 +1,61 @@
 # CyberGuard AI
 
-An enterprise-grade, AI-powered cybersecurity threat detection platform with **99.1% URL accuracy** and **99.2% email accuracy**. CyberGuard AI utilizes advanced machine learning models accelerated by Hugging Face ZeroGPU to analyze, classify, and block malicious content in real-time.
+An enterprise-grade, AI-powered cybersecurity threat detection platform with **99.1% URL accuracy** and **99.2% email accuracy**. CyberGuard AI utilizes advanced machine learning models accelerated by Hugging Face to analyze, classify, and block malicious content in real-time.
 
 ## Architecture
 
 | Component | Tech Stack | Environment |
 |---|---|---|
-| **Frontend** | React + Vite + Tailwind CSS + shadcn/ui | Vercel |
-| **Backend API** | Node.js + Express + MongoDB + @gradio/client | Render.com |
-| **ML Microservice** | Python + Pure Gradio + PyTorch (DistilBERT) + XGBoost | Hugging Face Spaces (ZeroGPU Accelerated) |
-| **Extension** | Chrome MV3 Extension + Glassmorphism UI | Browser |
+| **Frontend** | React + Vite + Tailwind CSS + shadcn/ui | **Vercel** (Auto-Deploy) |
+| **Backend API** | Node.js + Express + MongoDB + Puppeteer | **Render.com** (Auto-Deploy) |
+| **ML Microservice** | Python + FastAPI + PyTorch + LightGBM | **Hugging Face Spaces** (GitHub Actions Sync) |
+| **Extension** | Chrome MV3 Extension + Glassmorphism UI | **Browser** |
 
 ## Features
 
-- **URL Phishing Detection** — PyTorch DistilBERT Transformer + XGBoost ensemble (39 extracted features), trained on PhishTank, OpenPhish, URLhaus.
-- **Email Phishing Detection** — Fine-tuned DistilBERT Transformer + urgency analysis + link detection.
-- **Premium Chrome Extension** — Real-time page scanning with form, iframe, DOM anomaly, and JS obfuscation detection wrapped in a sleek glassmorphism overlay.
-- **Enterprise Dashboard** — Threat analytics, scan history, blocklist management, and ML API health monitoring.
-- **Role-Based Access Control (RBAC)** — Strict data isolation and access segregation between `Student` and `Admin` roles.
+- **Advanced URL Phishing Detection** — Ensemble architecture using ONNX-optimized PyTorch Transformers and LightGBM (trained on 150K real URLs from PhishTank & URLhaus).
+- **Dynamic Threat Sandboxing** — Headless Puppeteer engine embedded in the backend to safely execute and visually inspect suspicious links for invisible iframes, clickjacking overlays, and malicious JavaScript.
+- **Advanced File Analysis** — Instant client-side file inspection utilizing SHA-1, SHA-256, SHA-512 cryptographic hashing and Shannon Entropy calculations to detect obfuscated malware.
+- **Deep Network Traceroute** — Built-in network path inspection and redirect-chain unshortening to trace the origin of obfuscated links.
+- **Enterprise Dashboard** — Threat analytics, scan history, blocklist management, and real-time model health monitoring.
+- **Role-Based Access Control (RBAC)** — Strict data isolation and access segregation between users and administrators.
 
-## Quick Start (Local)
+## Quick Start (Local Development)
 
 ```bash
-# 1. Clone & setup
-git clone https://github.com/YOUR_USERNAME/CyberGuardAI.git
+# 1. Clone the repository
+git clone https://github.com/SRG2004/CyberGuardAI.git
 cd CyberGuardAI
 cp .env.example .env
-# Edit .env with your MongoDB URI
 
-# 2. Start all services (Windows)
+# 2. Add your MongoDB URI to the .env file
+# (e.g., MONGODB_URI=mongodb://127.0.0.1:27017/cyberguard)
+
+# 3. Start the entire application suite instantly (Windows)
+# This will automatically create Python virtual environments and launch all 3 services!
 start.bat
-
-# 3. Or start individually:
-# Backend
-cd backend && npm install && npm run dev
-
-# ML Service (Gradio)
-cd ml-service && pip install -r requirements.txt && python app.py
-
-# Frontend
-cd cyberguard-ui && npm install && npm run dev
 ```
 
-## Deploy to Production
+*(Alternatively, you can manually run `npm run dev` in `cyberguard-ui` and `backend`, and `python -m uvicorn main:app` in `ml-service`).*
 
-### Option 1: Render.com + Hugging Face Spaces + Vercel (Recommended Free Stack)
+## Production Deployment Pipeline
 
-1. **MongoDB Atlas** — Create a free cluster at [mongodb.com/atlas](https://www.mongodb.com/atlas)
-2. **ML Microservice (Hugging Face Spaces)** — Create a **Gradio** Space at [huggingface.co/spaces](https://huggingface.co/spaces) (free tier with ZeroGPU access), upload the `hf_space2/` folder contents.
-3. **Backend (Render.com)** — Connect repo → auto-detects `render.yaml` → deploys Node.js backend. Set `ML_SERVICE_URL` to your HF Space URL.
-4. **Frontend (Vercel)** — Import `cyberguard-ui` folder → auto-deploys frontend.
+This repository is configured with a fully automated, ultra-fast CI/CD pipeline using GitHub Actions, Vercel, and Render.
 
-## ML Model Performance
+1. **Frontend (Vercel)** 
+   - Vercel is connected natively to the GitHub repository. Pushing to `main` instantly builds and deploys the React frontend.
+2. **Backend (Render.com)**
+   - The `render.yaml` Blueprint automatically tells Render to build the Node.js API and natively configures the environment to safely run the headless Puppeteer browser within Render's memory constraints.
+3. **ML Microservice (Hugging Face Spaces)**
+   - A custom GitHub Action (`deploy.yml`) automatically syncs the `ml-service` directory directly to Hugging Face Spaces on every commit, skipping unnecessary Python setups to ensure lightning-fast CI deployments.
 
-| Model | Accuracy | F1 Score | Training Data |
-|---|---|---|---|
-| **URL (XGBoost + DistilBERT)** | 99.1% | 99.1% | 150K real URLs |
-| **Email (LinearSVC)** | 99.2% | 99.2% | 3,759 emails |
+## Chrome Extension Installation
 
-## Chrome Extension
+1. Go to `chrome://extensions/` in your Chrome browser.
+2. Enable **Developer mode** in the top right corner.
+3. Click **Load unpacked** and select the `extension/` folder in this repository.
 
-1. Go to `chrome://extensions/`
-2. Enable **Developer mode** in the top right.
-3. Click **Load unpacked** → select the `extension/` folder in this repository.
-
-See [extension/README.md](extension/README.md) for deeper details.
+See [extension/README.md](extension/README.md) for deeper details on the extension architecture.
 
 ## License
 
