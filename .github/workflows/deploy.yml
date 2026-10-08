@@ -71,6 +71,9 @@ jobs:
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    environment:
+      name: HuggingFace ML Service
+      url: https://huggingface.co/spaces/SRG4545/Cyberguard_AI_ML_Service
     steps:
       - uses: actions/checkout@v4
         with:
