@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Link2,
@@ -29,6 +30,7 @@ type UnshortenResult = {
 };
 
 export default function UrlUnshortener() {
+  const location = useLocation();
   const [url, setUrl] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<UnshortenResult | null>(null);
@@ -41,7 +43,11 @@ export default function UrlUnshortener() {
   useEffect(() => {
     // Mount browser console helper so user can run tracert() inside F12 DevTools console
     initBrowserConsoleTracertHelper();
-  }, []);
+
+    if (location.state?.url) {
+      setUrl(location.state.url);
+    }
+  }, [location.state]);
 
   const executeTraceroute = async (destinationUrl: string) => {
     setIsTracingRoute(true);

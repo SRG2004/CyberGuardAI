@@ -29,13 +29,16 @@ router.post('/email', optionalAuth, scanUserRateLimit, scanEmailValidation, asyn
 });
 
 router.post('/qr', optionalAuth, scanUserRateLimit, upload.single('image'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Image file is required.' } });
+  if (!req.file && !req.body?.detectedUrl) {
+    return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Image file or detected URL is required.' } });
   }
   try {
-    // Gradio JS client handles Blobs directly. We can pass the buffer as a Blob
-    const blob = new Blob([req.file.buffer], { type: req.file.mimetype });
-    const result = await predictQr(blob);
+    let blob = null;
+    if (req.file) {
+      blob = new Blob([req.file.buffer], { type: req.file.mimetype });
+    }
+    const detectedUrl = req.body?.detectedUrl || null;
+    const result = await predictQr(blob, detectedUrl);
     res.json({ success: true, data: result });
   } catch (error) {
     res.status(500).json({ success: false, error: { message: error.message } });

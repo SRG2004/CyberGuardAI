@@ -67,32 +67,147 @@ export async function predictEmail(subject, body) {
   }
 }
 
-export async function predictQr(imageBlob) {
+export function analyzeUrlHeuristics(rawUrl) {
+  let score = 5;
+  const explainability = [];
   try {
-    const formData = new FormData();
-    formData.append('file', imageBlob, 'qr.png');
+    let clean = rawUrl.trim();
+    if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
+      clean = 'https://' + clean;
+    }
+    const parsed = new URL(clean);
+    const host = parsed.hostname.toLowerCase();
+    const path = parsed.pathname.toLowerCase() + parsed.search.toLowerCase();
 
-    const response = await fetch(`${getBaseUrl()}/predict/qr`, {
-      method: 'POST',
-      body: formData,
-      signal: AbortSignal.timeout(15000)
-    });
-    
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    
-    const data = await response.json();
-    return { 
-        riskScore: data.riskScore || 0, 
-        verdict: data.verdict, 
-        confidence: data.confidence || 0, 
-        explainability: data.xai_analysis || [],
-        url: data.url,
-        error: data.error
-    };
-  } catch (err) {
-    logger.error('ML QR prediction failed:', err.message);
-    return { riskScore: 0, verdict: 'unknown', confidence: 0, explainability: [], failed: true };
+    // Raw IP address
+    if (/^(\d{1,3}\.){3}\d{1,3}$/.test(host)) {
+      score += 45;
+      explainability.push({ text: 'Raw IP Hostname', type: 'Heuristic', reason: 'Direct IP usage is common in phishing & bypass attacks.' });
+    }
+
+    // Excessive subdomains
+    const subdomains = host.split('.');
+    if (subdomains.length > 3) {
+      score += 25;
+      explainability.push({ text: 'Excessive Subdomains', type: 'Heuristic', reason: 'Deep subdomain nesting frequently seen in obfuscation.' });
+    }
+
+    // Suspicious keywords
+    const keywords = ['login', 'verify', 'update', 'banking', 'secure', 'signin', 'account', 'wallet', 'crypto', 'bonus', 'free', 'reward', 'claim', 'service', 'security'];
+    const found = keywords.filter(k => host.includes(k) || path.includes(k));
+    if (found.length > 0) {
+      score += Math.min(found.length * 20, 45);
+      explainability.push({ text: `Suspicious Keywords (${found.join(', ')})`, type: 'Heuristic', reason: 'Keywords often associated with social engineering and credential theft.' });
+    }
+
+    // URL Shorteners
+    const shorteners = ['bit.ly', 'tinyurl.com', 't.co', 'rb.gy', 'is.gd', 'cutt.ly', 'ow.ly'];
+    if (shorteners.some(s => host.includes(s))) {
+      score += 20;
+      explainability.push({ text: 'URL Shortener Detected', type: 'Obfuscation', reason: 'Shortened URLs mask the true destination domain.' });
+    }
+
+    // High-risk TLDs
+    const highRiskTlds = ['.top', '.xyz', '.work', '.click', '.loan', '.fit', '.gq', '.tk', '.ml', '.cf', '.ga', '.live', '.buzz'];
+    if (highRiskTlds.some(tld => host.endsWith(tld))) {
+      score += 30;
+      explainability.push({ text: 'High-Risk TLD', type: 'Domain Reputation', reason: 'Top-Level Domain frequently abused for spam & phishing.' });
+    }
+  } catch (e) {
+    score += 15;
   }
+
+  score = Math.min(Math.max(score, 0), 100);
+  const verdict = score >= 55 ? 'phishing' : score >= 25 ? 'suspicious' : 'safe';
+  return { score, verdict, explainability };
+}
+
+export async function predictQr(imageBlob, clientDetectedUrl = null) {
+  let decodedUrl = clientDetectedUrl || null;
+
+  // 1. Try primary ML Service if no pre-decoded URL was provided
+  if (!decodedUrl && imageBlob) {
+    try {
+      const formData = new FormData();
+      formData.append('file', imageBlob, 'qr.png');
+
+      const response = await fetch(`${getBaseUrl()}/predict/qr`, {
+        method: 'POST',
+        body: formData,
+        signal: AbortSignal.timeout(6000)
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.url && !data.error) {
+          return { 
+            riskScore: data.riskScore || 0, 
+            verdict: data.verdict || (data.riskScore > 50 ? 'phishing' : 'safe'), 
+            confidence: data.confidence || 90, 
+            explainability: data.xai_analysis || [],
+            url: data.url,
+          };
+        }
+      }
+    } catch (err) {
+      logger.debug('Primary ML QR service unavailable, using resilient fallback decoder:', err.message);
+    }
+  }
+
+  // 2. Fallback QR Decoder via api.qrserver.com if URL not yet decoded
+  if (!decodedUrl && imageBlob) {
+    try {
+      const formData = new FormData();
+      formData.append('file', imageBlob, 'qr.png');
+
+      const qrResponse = await fetch('https://api.qrserver.com/v1/read-qr-code/', {
+        method: 'POST',
+        body: formData,
+        signal: AbortSignal.timeout(8000)
+      });
+
+      if (qrResponse.ok) {
+        const qrJson = await qrResponse.json();
+        decodedUrl = qrJson?.[0]?.symbol?.[0]?.data || null;
+      }
+    } catch (qrErr) {
+      logger.error('Fallback QR decoder failed:', qrErr.message);
+    }
+  }
+
+  // If no QR code could be decoded from the image
+  if (!decodedUrl) {
+    return {
+      error: 'No readable QR code found in this image. Please ensure the QR code is clearly visible, focused, and well-lit.',
+      failed: true
+    };
+  }
+
+  // 3. Successfully decoded URL! Now analyze it for threats:
+  try {
+    const mlUrlRes = await predictUrl(decodedUrl);
+    if (!mlUrlRes.failed && mlUrlRes.label !== 'unknown') {
+      return {
+        url: decodedUrl,
+        riskScore: mlUrlRes.score || 0,
+        verdict: mlUrlRes.label,
+        confidence: mlUrlRes.confidence || 85,
+        explainability: mlUrlRes.explainability || [],
+      };
+    }
+  } catch (mlErr) {
+    logger.debug('URL ML predict failed, running heuristic analysis:', mlErr.message);
+  }
+
+  // 4. Heuristic threat evaluation fallback
+  const heuristic = analyzeUrlHeuristics(decodedUrl);
+  return {
+    url: decodedUrl,
+    riskScore: heuristic.score,
+    verdict: heuristic.verdict,
+    confidence: 85,
+    explainability: heuristic.explainability
+  };
 }
 
 export async function getHealth() {
