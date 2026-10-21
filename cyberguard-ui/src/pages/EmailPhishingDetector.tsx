@@ -23,7 +23,7 @@ export default function EmailPhishingDetector() {
 
       const parsedSignals = (result.data.xai_analysis || result.data.explainability || []).map(
         (s: { type?: string; text?: string; severity?: string; start?: string; reason?: string; color?: string }) => ({
-          text: s.text || s.type || 'Unknown Signal',
+          text: s.type && s.text !== s.type ? `${s.type}: "${s.text}"` : (s.text || s.type || 'Unknown Signal'),
           level: s.severity === 'high' || s.severity === 'medium' || s.severity === 'critical' ? 'danger' : s.severity === 'low' ? 'safe' : 'warning',
           detail: s.reason || s.text || '',
         })
@@ -88,7 +88,10 @@ export default function EmailPhishingDetector() {
 
             {/* AI Reasoning (XAI) */}
             {(scanEmail.data?.data?.xai_analysis?.length > 0 || scanEmail.data?.data?.explainability?.length > 0) && (() => {
-              const xaiData = scanEmail.data.data.xai_analysis || scanEmail.data.data.explainability || [];
+              const xaiData = (scanEmail.data.data.xai_analysis || scanEmail.data.data.explainability || []).filter(
+                (t: any) => t.text && t.text !== 'safe' && t.text !== 'phishing' && t.text !== 'suspicious'
+              );
+              if (xaiData.length === 0) return null;
               return (
               <div className="glass-card p-6">
                 <h3 className="font-display font-semibold text-foreground text-sm mb-4 flex items-center gap-2">
@@ -104,9 +107,9 @@ export default function EmailPhishingDetector() {
                     const regex = new RegExp(`(${triggerWords.join('|')})`, 'gi');
                     const parts = emailContent.split(regex);
                     return parts.map((part: string, i: number) => {
-                      const isTrigger = triggers.some((t: any) => t.text.toLowerCase() === part.toLowerCase());
+                      const isTrigger = triggers.some((t: any) => t.text && t.text.toLowerCase() === part.toLowerCase());
                       if (isTrigger) {
-                        const info = triggers.find((t: any) => t.text.toLowerCase() === part.toLowerCase());
+                        const info = triggers.find((t: any) => t.text && t.text.toLowerCase() === part.toLowerCase());
                         return (
                           <span key={i} title={info?.reason} className="bg-destructive/20 text-destructive font-bold px-1 py-0.5 rounded border border-destructive/30 shadow-[0_0_10px_rgba(239,68,68,0.3)] cursor-help">
                             {part}

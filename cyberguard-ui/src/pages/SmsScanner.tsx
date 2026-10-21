@@ -19,7 +19,7 @@ export default function SmsScanner() {
 
       const parsedSignals = (result.data.explainability || []).map(
         (s: any) => ({
-          text: s.text || s.type || 'Suspicious Pattern',
+          text: s.type && s.text !== s.type ? `${s.type}: "${s.text}"` : (s.text || s.type || 'Suspicious Pattern'),
           level: s.severity === 'high' || s.severity === 'medium' || s.severity === 'critical' ? 'danger' : s.severity === 'low' ? 'safe' : 'warning',
           detail: s.reason || '',
         })
@@ -79,7 +79,7 @@ export default function SmsScanner() {
             </div>
 
             {/* AI Reasoning (XAI) */}
-            {scanEmail.data?.data?.explainability?.length > 0 && (
+            {scanEmail.data?.data?.explainability?.length > 0 && scanEmail.data.data.explainability.some((t: any) => t.severity === 'high' || t.severity === 'critical') && (
               <div className="glass-card p-6">
                 <h3 className="font-display font-semibold text-foreground text-sm mb-4 flex items-center gap-2">
                   <Brain className="w-4 h-4 text-primary" /> Deep XAI Text Analysis
@@ -88,15 +88,15 @@ export default function SmsScanner() {
                 {/* Highlighted Text Box */}
                 <div className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-muted-foreground p-4 bg-muted/20 rounded-lg border border-border mb-4 max-h-60 overflow-y-auto">
                   {(() => {
-                    const triggers = scanEmail.data.data.explainability;
+                    const triggers = scanEmail.data.data.explainability.filter((t: any) => t.text && t.text !== 'safe' && t.text !== 'phishing' && t.text !== 'suspicious');
                     if (!triggers || triggers.length === 0) return <span>{smsContent}</span>;
                     const triggerWords = triggers.map((t: any) => t.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
                     const regex = new RegExp(`(${triggerWords.join('|')})`, 'gi');
                     const parts = smsContent.split(regex);
                     return parts.map((part: string, i: number) => {
-                      const isTrigger = triggers.some((t: any) => t.text.toLowerCase() === part.toLowerCase());
+                      const isTrigger = triggers.some((t: any) => t.text && t.text.toLowerCase() === part.toLowerCase());
                       if (isTrigger) {
-                        const info = triggers.find((t: any) => t.text.toLowerCase() === part.toLowerCase());
+                        const info = triggers.find((t: any) => t.text && t.text.toLowerCase() === part.toLowerCase());
                         return (
                           <span key={i} title={info?.reason} className="bg-destructive/20 text-destructive font-bold px-1 py-0.5 rounded border border-destructive/30 shadow-[0_0_10px_rgba(239,68,68,0.3)] cursor-help">
                             {part}
