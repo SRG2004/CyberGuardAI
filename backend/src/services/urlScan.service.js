@@ -77,6 +77,15 @@ export async function scanUrl(url, userId = null, source = 'dashboard') {
     type = getThreatType(url, riskScore);
   }
 
+  const validVerdicts = ['malicious', 'suspicious', 'safe'];
+  if (!validVerdicts.includes(verdict)) {
+    verdict = riskScore > 60 ? 'malicious' : riskScore > 30 ? 'suspicious' : 'safe';
+  }
+  const validTypes = ['phishing', 'malware', 'suspicious', 'safe', 'spam', 'fake_domain'];
+  if (!validTypes.includes(type)) {
+    type = riskScore > 60 ? 'malware' : 'suspicious';
+  }
+
   // Save threat
   const threat = await Threat.create({
     url,
