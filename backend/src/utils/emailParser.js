@@ -25,16 +25,106 @@ export const BRAND_ENTITIES = [
 
 // Curated list of high-risk phishing / smishing semantic phrases
 export const PHISHING_RULES = [
+  // --- Impersonal Salutations ---
+  {
+    regex: /dear (?:customer|user|client|cardholder|account\s*holder|member|taxpayer|citizen)/i,
+    type: 'Impersonal Salutation',
+    severity: 'medium',
+    points: 20,
+    reason: 'Generic greeting commonly used in automated bulk smishing/phishing campaigns.'
+  },
+
+  // --- Banking & Account Threats ---
+  {
+    regex: /(?:bank\s*)?account (?:will be|has been|is|is being)?\s*(?:temporarily\s*)?(?:blocked|suspended|locked|restricted|deactivated|closed|frozen|terminated)/i,
+    type: 'Account Suspension Threat',
+    severity: 'critical',
+    points: 40,
+    reason: 'Threat of immediate account blocking, locking, or termination designed to coerce quick action.'
+  },
+  {
+    regex: /(?:will be|has been)?\s*blocked\s*(?:today|immediately|within \d+ hours)?/i,
+    type: 'Account Blocking Alert',
+    severity: 'high',
+    points: 30,
+    reason: 'Urgent blocking notice pressuring the victim to act without verifying authenticity.'
+  },
+  {
+    regex: /bank account/i,
+    type: 'Banking Context',
+    severity: 'medium',
+    points: 20,
+    reason: 'Targets banking and personal financial account credentials.'
+  },
+  {
+    regex: /(?:to )?avoid (?:suspension|blocking|closure|termination|penalty|action|legal action)/i,
+    type: 'Coercive Penalty Threat',
+    severity: 'high',
+    points: 30,
+    reason: 'Consequence threat manufactured to bypass user suspicion and force compliance.'
+  },
+
+  // --- KYC, PAN & Identity Verification Demands ---
+  {
+    regex: /(?:incomplete|pending|mandatory|failed|update|verify|required)?\s*kyc(?:\s*verification|\s*update|\s*details|\s*documents)?/i,
+    type: 'KYC Phishing Pretext',
+    severity: 'critical',
+    points: 40,
+    reason: 'Fake KYC/compliance update pretext widely abused worldwide to compromise banking accounts.'
+  },
+  {
+    regex: /pan\s*(?:card)?\s*(?:update|verification|linked|blocked)/i,
+    type: 'Tax/ID Phishing Pretext',
+    severity: 'critical',
+    points: 40,
+    reason: 'PAN/tax ID update lure commonly used in identity theft scams.'
+  },
+  {
+    regex: /update (?:your )?(?:details|info|account|credentials|profile|kyc|address)\s*(?:immediately|now|today)?/i,
+    type: 'Credential Harvesting',
+    severity: 'high',
+    points: 30,
+    reason: 'Demands immediate update of sensitive credentials on an unverified link.'
+  },
+  {
+    regex: /\b(?:immediately|right away|urgently|promptly)\b/i,
+    type: 'Urgency Pressure',
+    severity: 'high',
+    points: 25,
+    reason: 'High-pressure psychological urgency keyword.'
+  },
+  {
+    regex: /(?:using|click|tap|visit|follow|open)\s*(?:on )?(?:the )?(?:link|url|website)\s*(?:below|here|provided)?/i,
+    type: 'Call-to-Action Redirection',
+    severity: 'high',
+    points: 25,
+    reason: 'Directs victim to an external unverified link.'
+  },
+  {
+    regex: /link below|click here|tap here/i,
+    type: 'Call-to-Action Redirection',
+    severity: 'medium',
+    points: 20,
+    reason: 'Call-to-action hyperlink lure.'
+  },
+  {
+    regex: /(?:customer|bank|banking)\s*(?:support|service|care|team|desk|department)/i,
+    type: 'Authority Impersonation',
+    severity: 'medium',
+    points: 15,
+    reason: 'Impersonates generic customer support staff to manufacture false trust.'
+  },
+
   // --- Delivery / Postal Smishing ---
   {
-    regex: /package could not be delivered/i,
+    regex: /package (?:could not be|cannot be|failed to be)?\s*delivered/i,
     type: 'Postal / Delivery Smishing',
     severity: 'critical',
     points: 35,
     reason: 'Fake failed delivery attempt is a hallmark smishing lure designed to induce panic.'
   },
   {
-    regex: /parcel could not be delivered/i,
+    regex: /parcel (?:could not be|cannot be|failed to be)?\s*delivered/i,
     type: 'Postal / Delivery Smishing',
     severity: 'critical',
     points: 35,
@@ -99,7 +189,7 @@ export const PHISHING_RULES = [
 
   // --- Urgency & Coercive Account Suspension ---
   {
-    regex: /urgent action required/i,
+    regex: /urgent action required|action required/i,
     type: 'Urgency Pressure',
     severity: 'high',
     points: 25,
@@ -234,13 +324,6 @@ export const PHISHING_RULES = [
     reason: 'Credential prompt used in account takeover attacks.'
   },
   {
-    regex: /click (?:on )?the link below/i,
-    type: 'Call-to-Action Redirection',
-    severity: 'medium',
-    points: 20,
-    reason: 'Generic call-to-action directing user away to an external link.'
-  },
-  {
     regex: /click here to (?:verify|unlock|confirm|update|login)/i,
     type: 'Call-to-Action Redirection',
     severity: 'high',
@@ -253,6 +336,22 @@ export const PHISHING_RULES = [
     severity: 'medium',
     points: 15,
     reason: 'Mobile smishing call-to-action urging link click.'
+  },
+
+  // --- OTP, Security Codes, Tolls, & Fines ---
+  {
+    regex: /otp|one-time\s*(?:passcode|password)|security code|verification code/i,
+    type: 'OTP Interception Trap',
+    severity: 'high',
+    points: 30,
+    reason: 'Prompts for one-time verification codes used for account takeover.'
+  },
+  {
+    regex: /unpaid toll|toll invoice|sunpass|e-pass|toll violation|traffic ticket|parking ticket/i,
+    type: 'Toll & Citation Smishing',
+    severity: 'critical',
+    points: 40,
+    reason: 'Fraudulent toll citation scam demanding immediate penalty payments.'
   },
 
   // --- Authority & Team Impersonation ---
@@ -481,6 +580,17 @@ export function analyzeContentNLP(subject = '', body = '') {
         reason: `Domain uses top-level domain '${domain.slice(domain.lastIndexOf('.'))}' frequently exploited in phishing campaigns.`
       });
       score += 25;
+    }
+
+    // Check URL path for credential harvesting patterns (/verify, /update, /login, /kyc, /signin, etc.)
+    if (/\/verify|\/update|\/login|\/kyc|\/signin|\/secure|\/account/i.test(cleanLink)) {
+      matchedSpans.push({
+        text: link,
+        type: 'Credential Harvesting Link',
+        severity: 'high',
+        reason: 'Embedded link points directly to a login, KYC, or credential harvesting path.'
+      });
+      score += 35;
     }
   }
 
