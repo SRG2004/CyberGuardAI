@@ -12,13 +12,14 @@ import { useAuthStore } from '@/stores/authStore';
 type NavItem = { path: string; label: string; icon: typeof Shield; roles: string[] };
 
 const allNavItems: NavItem[] = [
-  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['student', 'admin'] },
+  // ── Student Tools ──
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['student'] },
   { path: '/link-scanner', label: 'Link Scanner', icon: LinkIcon, roles: ['student'] },
   { path: '/email-scanner', label: 'Email Detector', icon: Mail, roles: ['student'] },
   { path: '/qr-scanner', label: 'QR Scanner', icon: QrCode, roles: ['student'] },
-  { path: '/threat-feed', label: 'Threat Feed', icon: Globe, roles: ['admin'] },
   { path: '/scan-history', label: 'Scan History', icon: ClipboardList, roles: ['student'] },
-  { path: '/report', label: 'Threat Hunter', icon: AlertOctagon, roles: ['student', 'admin'] },
+  { path: '/threat-feed', label: 'Threat Feed', icon: Globe, roles: ['student'] },
+  { path: '/report', label: 'Threat Hunter', icon: AlertOctagon, roles: ['student'] },
   { path: '/password-check', label: 'Password Check', icon: KeyRound, roles: ['student'] },
   { path: '/sms-scanner', label: 'SMS Scanner', icon: MessageSquareText, roles: ['student'] },
   { path: '/device-audit', label: 'Device Audit', icon: MonitorSmartphone, roles: ['student'] },
@@ -26,12 +27,16 @@ const allNavItems: NavItem[] = [
   { path: '/unshortener', label: 'URL Tracer', icon: Link2, roles: ['student'] },
   { path: '/header-analyzer', label: 'Header Spoof', icon: Fingerprint, roles: ['student'] },
   { path: '/extension', label: 'Extension Manager', icon: Puzzle, roles: ['student'] },
-  { path: '/admin/overview', label: 'Admin: Overview', icon: Activity, roles: ['admin'] },
-  { path: '/admin/queue', label: 'Admin: Review Queue', icon: AlertTriangle, roles: ['admin'] },
-  { path: '/admin/blocklist', label: 'Admin: Blocklist', icon: Database, roles: ['admin'] },
-  { path: '/admin/users', label: 'Admin: Users', icon: Users, roles: ['admin'] },
-  { path: '/admin/api', label: 'Admin: API Health', icon: Activity, roles: ['admin'] },
-  { path: '/admin/model', label: 'Admin: Model', icon: Brain, roles: ['admin'] },
+
+  // ── Admin Command & Control ──
+  { path: '/admin/overview', label: 'Admin Dashboard', icon: LayoutDashboard, roles: ['admin'] },
+  { path: '/admin/queue', label: 'Review Queue', icon: AlertTriangle, roles: ['admin'] },
+  { path: '/admin/blocklist', label: 'Blocklist Manager', icon: Database, roles: ['admin'] },
+  { path: '/admin/users', label: 'User Management', icon: Users, roles: ['admin'] },
+  { path: '/admin/api', label: 'API & Service Health', icon: Activity, roles: ['admin'] },
+  { path: '/admin/model', label: 'ML Model Control', icon: Brain, roles: ['admin'] },
+
+  // ── Shared Settings ──
   { path: '/settings', label: 'Settings', icon: Settings, roles: ['student', 'admin'] },
   { path: '/profile', label: 'Profile', icon: User, roles: ['student', 'admin'] },
 ];

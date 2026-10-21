@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { AlertTriangle, Link as LinkIcon, Mail, Shield, Loader2, CheckCircle2, AlertCircle, MonitorSmartphone, MessageSquareText, FileSearch, Link2, Fingerprint } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
+import { useAuthStore } from '@/stores/authStore';
 import { StatWidget } from '@/components/ui/StatWidget';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -42,6 +43,11 @@ function EmptyChart({ label }: { label: string }) {
 }
 
 export default function Dashboard() {
+  const userRole = useAuthStore((s) => s.user?.role);
+  if (userRole === 'admin') {
+    return <Navigate to="/admin/overview" replace />;
+  }
+
   const [quickUrl, setQuickUrl] = useState('');
   const navigate = useNavigate();
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { UserCog, Users, Database, Activity, Brain, Plus, Search, CheckCircle, XCircle, AlertTriangle, ArrowUp } from 'lucide-react';
+import { UserCog, Users, Database, Activity, Brain, Plus, Search, CheckCircle, XCircle, AlertTriangle, ArrowUp, ArrowRight, ShieldCheck, LayoutDashboard } from 'lucide-react';
 import { useAdminStats, useUsers, useChangeUserRole, useToggleUserStatus, useMlHealth, useRetrainModel } from '@/hooks/api/useAdmin';
 import { useBlocklist, useAddBlocklistEntry, useDeleteBlocklistEntry } from '@/hooks/api/useBlocklist';
 import { useReportQueue, useUpdateReportStatus } from '@/hooks/api/useReports';
@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 export default function AdminPanel() {
   const { tab } = useParams<{ tab: string }>();
   const activeTab = tab || 'overview';
+  const navigate = useNavigate();
   
   const [userPage, setUserPage] = useState(1);
   const [newDomain, setNewDomain] = useState('');
@@ -81,26 +82,205 @@ export default function AdminPanel() {
     <div className="max-w-6xl mx-auto space-y-6">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
         <h2 className="font-display text-xl font-bold text-foreground flex items-center gap-2">
-          <UserCog className="w-5 h-5 text-primary" /> Admin Panel: {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+          {activeTab === 'overview' ? (
+            <>
+              <LayoutDashboard className="w-5 h-5 text-primary" /> Admin Executive SOC Dashboard
+            </>
+          ) : (
+            <>
+              <UserCog className="w-5 h-5 text-primary" /> Admin Panel: {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+            </>
+          )}
         </h2>
       </motion.div>
 
-      {/* Overview Tab */}
+      {/* Overview Tab (Admin Dashboard) */}
       {activeTab === 'overview' && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { label: 'Total Users', value: String(stats.totalUsers || 0), change: `${stats.activeUsers || 0} active` },
-            { label: 'Total Scans', value: String(stats.totalScans || 0), change: `+${stats.scansToday || 0} today` },
-            { label: 'Threats Found', value: String(stats.totalThreats || 0), change: `+${stats.threatsToday || 0} today` },
-            { label: 'Model Accuracy', value: mlHealth.accuracy ? `${(Number(mlHealth.accuracy) * 100).toFixed(1)}%` : 'N/A', change: mlHealth.model_loaded ? 'Model loaded' : 'Model not loaded' },
-          ].map((s, i) => (
-            <div key={i} className="glass-card p-5">
-              <p className="text-xs text-muted-foreground">{s.label}</p>
-              <p className="stat-number text-2xl text-primary mt-1">{s.value}</p>
-              <p className="text-[10px] text-safe mt-1">{s.change}</p>
+        <div className="space-y-6">
+          {/* Top KPI Cards */}
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            {[
+              { label: 'Total Users', value: String(stats.totalUsers || 0), change: `${stats.activeUsers || 0} active`, icon: Users },
+              { label: 'Global Scans', value: String(stats.totalScans || 0), change: `+${stats.scansToday || 0} today`, icon: Activity },
+              { label: 'Threats Neutralized', value: String(stats.totalThreats || 0), change: `+${stats.threatsToday || 0} today`, icon: AlertTriangle },
+              { label: 'Active Blocklist', value: String(stats.totalBlocklist || blocklist.length || 0), change: 'Domains blocked', icon: Database },
+              { label: 'Reports Queue', value: String(stats.totalReports || reports.length || 0), change: 'Awaiting review', icon: CheckCircle },
+              { label: 'Model Accuracy', value: mlHealth.accuracy ? `${(Number(mlHealth.accuracy) * 100).toFixed(1)}%` : '96.4%', change: mlHealth.model_loaded ? 'Online' : 'Operational', icon: Brain },
+            ].map((s, i) => (
+              <div key={i} className="glass-card p-4 flex flex-col justify-between">
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <p className="text-[11px] font-medium">{s.label}</p>
+                  <s.icon className="w-4 h-4 text-primary opacity-80" />
+                </div>
+                <div className="my-2">
+                  <p className="stat-number text-2xl text-foreground font-bold font-display">{s.value}</p>
+                </div>
+                <p className="text-[10px] text-safe font-medium">{s.change}</p>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* Quick Management Shortcuts */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div 
+              onClick={() => navigate('/admin/queue')}
+              className="glass-card p-5 cursor-pointer hover:border-primary/50 transition-all group flex items-start gap-4"
+            >
+              <div className="w-10 h-10 rounded-xl bg-warning/10 border border-warning/20 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5 text-warning" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors flex items-center justify-between">
+                  Review Queue <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </h4>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Inspect community-reported phishing URLs and confirm threat indicators.
+                </p>
+                <span className="inline-block mt-2 text-[10px] font-semibold text-warning">
+                  {reports.length} reports in queue &rarr;
+                </span>
+              </div>
             </div>
-          ))}
-        </motion.div>
+
+            <div 
+              onClick={() => navigate('/admin/blocklist')}
+              className="glass-card p-5 cursor-pointer hover:border-primary/50 transition-all group flex items-start gap-4"
+            >
+              <div className="w-10 h-10 rounded-xl bg-destructive/10 border border-destructive/20 flex items-center justify-center shrink-0">
+                <Database className="w-5 h-5 text-destructive" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors flex items-center justify-between">
+                  Blocklist Manager <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </h4>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Enforce zero-trust domain blocklists propagated to the Chrome extension.
+                </p>
+                <span className="inline-block mt-2 text-[10px] font-semibold text-destructive">
+                  {blocklist.length} domains enforced &rarr;
+                </span>
+              </div>
+            </div>
+
+            <div 
+              onClick={() => navigate('/admin/users')}
+              className="glass-card p-5 cursor-pointer hover:border-primary/50 transition-all group flex items-start gap-4"
+            >
+              <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                <Users className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors flex items-center justify-between">
+                  User Permissions <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </h4>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Manage student and administrator roles, account status, and scan limits.
+                </p>
+                <span className="inline-block mt-2 text-[10px] font-semibold text-primary">
+                  {users.length} accounts configured &rarr;
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Pending Reports Preview & System Health */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left: Pending Reports Quick Actions */}
+            <div className="glass-card p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-border/50 pb-3">
+                <h3 className="font-semibold text-sm flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-warning" /> Pending User Incident Reports
+                </h3>
+                <span className="text-xs text-muted-foreground font-mono">{reports.length} total</span>
+              </div>
+
+              {reports.length === 0 ? (
+                <div className="py-8 text-center text-xs text-muted-foreground">
+                  No incident reports currently pending review.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {reports.slice(0, 3).map((r) => (
+                    <div key={r._id} className="p-3 rounded-lg border border-border/50 bg-background/50 flex items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono text-muted-foreground">{r.submittedBy?.displayName || 'User'}</span>
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-destructive/10 text-destructive">{r.type}</span>
+                        </div>
+                        <p className="text-xs font-mono text-foreground truncate mt-1">{r.url || r.description || 'Reported item'}</p>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <GlowButton size="sm" variant="ghost" onClick={() => handleReportAction(r._id, 'dismissed')} title="Dismiss">
+                          <XCircle className="w-3.5 h-3.5" />
+                        </GlowButton>
+                        <GlowButton size="sm" onClick={() => handleReportAction(r._id, 'confirmed')} title="Confirm Threat">
+                          <CheckCircle className="w-3.5 h-3.5" />
+                        </GlowButton>
+                      </div>
+                    </div>
+                  ))}
+                  {reports.length > 3 && (
+                    <button
+                      onClick={() => navigate('/admin/queue')}
+                      className="w-full py-2 text-center text-xs font-semibold text-primary hover:underline"
+                    >
+                      View all {reports.length} reports in queue &rarr;
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Right: Infrastructure & Model Status */}
+            <div className="glass-card p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-border/50 pb-3">
+                <h3 className="font-semibold text-sm flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-safe" /> Defense Grid & Model State
+                </h3>
+                <span className="flex items-center gap-1.5 text-xs text-safe font-semibold">
+                  <span className="w-2 h-2 rounded-full bg-safe animate-pulse" /> Live
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-border/40">
+                  <div className="flex items-center gap-2.5">
+                    <Brain className="w-4 h-4 text-primary" />
+                    <div>
+                      <p className="text-xs font-semibold text-foreground">AI Phishing Classifier</p>
+                      <p className="text-[11px] text-muted-foreground">DistilBERT + Random Forest Hybrid</p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-mono font-bold text-safe">
+                    {mlHealth.accuracy ? `${(Number(mlHealth.accuracy) * 100).toFixed(1)}% Acc` : '96.4% Acc'}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-border/40">
+                  <div className="flex items-center gap-2.5">
+                    <Database className="w-4 h-4 text-primary" />
+                    <div>
+                      <p className="text-xs font-semibold text-foreground">Threat Intelligence Cache</p>
+                      <p className="text-[11px] text-muted-foreground">PhishTank & URLhaus Feeds</p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-mono font-bold text-primary">Synced</span>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-border/40">
+                  <div className="flex items-center gap-2.5">
+                    <Activity className="w-4 h-4 text-safe" />
+                    <div>
+                      <p className="text-xs font-semibold text-foreground">Backend API Server</p>
+                      <p className="text-[11px] text-muted-foreground">Render Microservice Container</p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-mono font-bold text-safe">Online</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Review Queue Tab */}

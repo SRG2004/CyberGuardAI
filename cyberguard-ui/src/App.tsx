@@ -52,6 +52,8 @@ const App = () => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const initialize = useAuthStore((s) => s.initialize);
 
+  const userRole = useAuthStore((s) => s.user?.role);
+
   useEffect(() => {
     initialize();
   }, [initialize]);
@@ -73,11 +75,15 @@ const App = () => {
         <BrowserRouter>
           <Suspense fallback={<PageLoader />}>
             <Routes>
-              {/* Login: redirect to dashboard if already authenticated */}
+              {/* Login: redirect based on user role if already authenticated */}
               <Route
                 path="/"
                 element={
-                  isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />
+                  isAuthenticated ? (
+                    <Navigate to={userRole === 'admin' ? '/admin/overview' : '/dashboard'} replace />
+                  ) : (
+                    <Login />
+                  )
                 }
               />
 
