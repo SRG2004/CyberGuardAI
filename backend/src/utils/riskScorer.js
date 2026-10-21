@@ -48,7 +48,8 @@ export function calculateRiskScore(ml, whois, url = '') {
 
   // ML Model: 0-70 points (primary source)
   if (ml && Number.isFinite(ml.score)) {
-    score += Math.round(ml.score * 70);
+    const normalizedScore = ml.score > 1 ? ml.score / 100 : Math.max(0, ml.score);
+    score += Math.round(normalizedScore * 70);
   }
 
   // URL lexical/domain heuristics: capped to avoid overriding the model.

@@ -107,8 +107,18 @@ export interface ScanResponse {
   verdict: string;
   riskScore: number;
   sources: {
-    mlModel: { probability: number; features: string[] };
+    mlModel: {
+      probability: number;
+      features: string[];
+      explainability?: Array<{ text: string; type: string; severity?: string; reason: string }>;
+    };
     whois: { domainAge: number | null; registrar: string | null; country: string };
+    threatIntel?: {
+      isThreat: boolean;
+      source: string;
+      reason: string;
+      threatType?: string;
+    } | null;
   };
   threatId: string;
   durationMs: number;

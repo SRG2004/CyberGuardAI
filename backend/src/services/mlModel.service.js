@@ -1,12 +1,35 @@
 import axios from 'axios';
 import env from '../config/env.js';
 import logger from '../utils/logger.js';
+import { checkThreatIntelligence } from './threatIntel.service.js';
 
 const getBaseUrl = () => {
   return env.ML_SERVICE_URL.replace(/\/$/, '');
 };
 
 export async function predictUrl(url) {
+  // 1. Instant O(1) Threat Intelligence Crosscheck (URLhaus / OpenPhish / Blocklist)
+  try {
+    const intel = await checkThreatIntelligence(url);
+    if (intel && intel.isThreat) {
+      logger.warn(`[mlModel] Positive Threat Intelligence match for ${url}: ${intel.source}`);
+      return {
+        score: intel.riskScore,
+        label: intel.verdict,
+        confidence: intel.confidence,
+        explainability: [{
+          text: `Flagged by ${intel.source}`,
+          type: 'Threat Intelligence',
+          severity: 'critical',
+          reason: intel.reason,
+        }],
+        url,
+      };
+    }
+  } catch (intelErr) {
+    logger.debug('[mlModel] Threat intel pre-check error:', intelErr.message);
+  }
+
   try {
     const response = await axios.post(`${getBaseUrl()}/predict/url`, { url }, { timeout: 15000 });
     const data = response.data;

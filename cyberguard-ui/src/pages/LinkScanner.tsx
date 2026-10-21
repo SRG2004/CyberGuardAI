@@ -81,6 +81,37 @@ export default function LinkScanner() {
             )}
           </div>
 
+          {/* Threat Intelligence Alert Banner */}
+          {scan.data.data.sources?.threatIntel?.isThreat && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="p-5 rounded-2xl border border-destructive/40 bg-destructive/10 backdrop-blur-md flex items-start gap-4 shadow-[0_0_30px_rgba(255,59,92,0.15)]"
+            >
+              <div className="p-2.5 rounded-xl bg-destructive/20 text-destructive mt-0.5 border border-destructive/30">
+                <Shield className="w-6 h-6 text-destructive animate-pulse" />
+              </div>
+              <div className="flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[11px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-destructive text-white shadow-sm">
+                    Live Threat Intel Intercept
+                  </span>
+                  <span className="text-xs text-destructive font-mono font-bold">
+                    {scan.data.data.sources.threatIntel.source}
+                  </span>
+                  {scan.data.data.sources.threatIntel.threatType && (
+                    <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded border border-destructive/30 text-destructive/80">
+                      Type: {scan.data.data.sources.threatIntel.threatType}
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm font-semibold text-foreground mt-2 leading-relaxed">
+                  {scan.data.data.sources.threatIntel.reason}
+                </p>
+              </div>
+            </motion.div>
+          )}
+
           {/* Analysis Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
