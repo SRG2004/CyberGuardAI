@@ -7,21 +7,32 @@ import { useTheme } from '../theme-provider';
 
 const pageTitles: Record<string, string> = {
   '/dashboard': 'Dashboard',
+  '/link-scanner': 'Link Scanner',
   '/scanner': 'Link Scanner',
+  '/email-scanner': 'Email Phishing Detector',
   '/email-detector': 'Email Phishing Detector',
-  '/threat-feed': 'Global Threat Feed',
-  '/scan-history': 'Scan History',
+  '/sms-scanner': 'SMS Smishing Detector',
+  '/qr-scanner': 'QR Code Scanner',
+  '/file-analyzer': 'File & Malware Analyzer',
+  '/unshortener': 'URL Tracer & Unshortener',
+  '/password-check': 'Password Breach & Strength Check',
+  '/device-audit': 'Device & Browser Audit',
+  '/header-analyzer': 'Email Header Spoof Analyzer',
+  '/scan-history': 'Personal Scan History',
   '/report': 'Threat Hunter',
-  '/password-check': 'Password Check',
-  '/sms-scanner': 'SMS Scanner',
-  '/device-audit': 'Device Audit',
-  '/file-analyzer': 'File Analyzer',
-  '/unshortener': 'URL Tracer',
-  '/header-analyzer': 'Header Spoof Analyzer',
-  '/extension': 'Extension Manager',
-  '/admin': 'Admin Panel',
-  '/settings': 'Settings',
-  '/profile': 'Profile',
+  '/threat-feed': 'Global Threat Intelligence Feed',
+  '/extension': 'Chrome Extension Protection',
+  '/install': 'Install Extension',
+  '/settings': 'Account & Security Settings',
+  '/profile': 'User Profile',
+  // Admin Routes
+  '/admin': 'Admin Command & Control',
+  '/admin/overview': 'Admin Command Center',
+  '/admin/queue': 'Threat Review Queue',
+  '/admin/blocklist': 'Blocklist & Threat Database',
+  '/admin/users': 'User Management & Access',
+  '/admin/api': 'API & Microservice Health',
+  '/admin/model': 'AI / ML Model Telemetry & Control',
 };
 
 const placeholders = [
@@ -36,7 +47,8 @@ export function Topbar() {
   const navigate = useNavigate();
   const userRole = useAuthStore((s) => s.user?.role);
   const [hasUnread, setHasUnread] = useState(true);
-  const title = pageTitles[location.pathname] || 'CyberGuard AI';
+  const title = pageTitles[location.pathname] || 
+    (location.pathname.startsWith('/admin') ? 'Admin Command Center' : 'CyberGuard AI');
   const { theme, setTheme } = useTheme();
 
   const handleNotifications = () => {
