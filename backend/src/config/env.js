@@ -14,7 +14,7 @@ export const config = Object.freeze({
   ACCESS_TOKEN_EXPIRY: process.env.ACCESS_TOKEN_EXPIRY || '15m',
   REFRESH_TOKEN_EXPIRY: process.env.REFRESH_TOKEN_EXPIRY || '7d',
   WHOIS_API_KEY: process.env.WHOIS_API_KEY || '',
-  ML_SERVICE_URL: process.env.ML_SERVICE_URL || 'http://localhost:8001',
+  ML_SERVICE_URL: process.env.ML_SERVICE_URL || 'https://srg4545-cyberguard-ai-ml-service.hf.space',
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3000',
   SMTP_HOST: process.env.SMTP_HOST || 'smtp.gmail.com',
   SMTP_PORT: parseInt(process.env.SMTP_PORT, 10) || 587,
