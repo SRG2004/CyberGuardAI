@@ -29,6 +29,9 @@ export async function scanUrl(url, userId = null, source = 'dashboard') {
   }
 
   // 1. Parallel execution: Check Live Threat Intelligence (URLhaus, OpenPhish, Blocklist) & WHOIS
+  let mlResult = null;
+  let sandboxData = null;
+
   const threatIntelPromise = checkThreatIntelligence(url);
   const whoisPromise = lookupWhois(url);
 
