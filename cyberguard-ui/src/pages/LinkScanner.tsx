@@ -178,8 +178,49 @@ export default function LinkScanner() {
 
           {/* Actions */}
           <div className="flex gap-3">
-            <GlowButton variant="danger" size="sm" onClick={() => navigate('/report')}>
-              <Flag className="w-4 h-4" /> Report
+            <GlowButton
+              variant="danger"
+              size="sm"
+              onClick={() => {
+                const threatInfo = scan.data?.data;
+                const targetUrl = threatInfo?.input || url;
+                const verdict = threatInfo?.verdict?.toUpperCase() || 'SUSPICIOUS';
+                const score = threatInfo?.riskScore ?? 0;
+
+                const reasons: string[] = [];
+                if (threatInfo?.sources?.threatIntel?.reason) {
+                  reasons.push(`Threat Intel (${threatInfo.sources.threatIntel.source}): ${threatInfo.sources.threatIntel.reason}`);
+                }
+                if (threatInfo?.sources?.mlModel?.explainability?.length) {
+                  threatInfo.sources.mlModel.explainability.forEach((e: any) => {
+                    reasons.push(`• [${e.type || 'Signal'}] ${e.text}: ${e.reason}`);
+                  });
+                }
+                if (threatInfo?.sources?.whois?.domainAge !== null && threatInfo?.sources?.whois?.domainAge !== undefined) {
+                  reasons.push(`• WHOIS Domain Age: ${threatInfo.sources.whois.domainAge} days (Registrar: ${threatInfo.sources.whois.registrar || 'Unknown'})`);
+                }
+
+                const desc = `[CyberGuard Auto-Scan Report]
+Target URL: ${targetUrl}
+Verdict: ${verdict} (Risk Score: ${score}%)
+${threatInfo?.scanId ? `Scan ID: ${threatInfo.scanId}\n` : ''}
+Key Threat Indicators:
+${reasons.length ? reasons.join('\n') : '• Flagged by CyberGuard AI threat detection engine.'}
+`;
+
+                navigate('/report', {
+                  state: {
+                    url: targetUrl,
+                    type: score >= 60 ? 'Phishing Link' : 'Fake Website',
+                    description: desc,
+                    riskScore: score,
+                    verdict: threatInfo?.verdict || 'suspicious',
+                    source: 'Link Scanner',
+                  },
+                });
+              }}
+            >
+              <Flag className="w-4 h-4" /> Report Threat
             </GlowButton>
             <GlowButton variant="ghost" size="sm">
               <FileDown className="w-4 h-4" /> Download Report

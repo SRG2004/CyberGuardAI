@@ -35,12 +35,20 @@ function getUrlHeuristicScore(rawUrl = '') {
     if (pathDepth > 4) score += 5;
 
     const dashCount = (hostname.match(/-/g) || []).length;
-    if (dashCount > 3) score += 5;
+    // DGA / High-Entropy Algorithm Check
+    const sld = hostParts.length >= 2 ? hostParts[hostParts.length - 2] : hostname;
+    const vowels = (sld.match(/[aeiou]/g) || []).length;
+    const vowelRatio = vowels / (sld.length || 1);
+    const consecutiveConsonants = (sld.match(/[^aeiou\d]{5,}/g) || []).length;
+    const isDga = (vowels === 0 && sld.length >= 5) || consecutiveConsonants > 0 || (vowelRatio < 0.15 && sld.length >= 7);
+    if (isDga) {
+      score += 28;
+    }
   } catch {
     score += 8;
   }
 
-  return Math.min(score, 35);
+  return Math.min(score, 50);
 }
 
 export function calculateRiskScore(ml, whois, url = '') {
@@ -52,22 +60,45 @@ export function calculateRiskScore(ml, whois, url = '') {
     score += Math.round(normalizedScore * 70);
   }
 
-  // URL lexical/domain heuristics: capped to avoid overriding the model.
+  // URL lexical/domain heuristics
   score += getUrlHeuristicScore(url);
 
-  // WHOIS: 0-30 points
+  // WHOIS & Domain Age Scoring: 0-50 points
   if (whois) {
-    if (whois.domainAge !== null && whois.domainAge < 30) {
-      score += 20;
+    if (whois.domainAge !== null && whois.domainAge !== undefined) {
+      if (whois.domainAge <= 1) {
+        score += 45; // Brand new (registered today / < 24h)
+      } else if (whois.domainAge <= 7) {
+        score += 35; // Less than 7 days old
+      } else if (whois.domainAge <= 30) {
+        score += 20; // Less than 30 days old
+      }
     }
     if (!whois.registrar) {
       score += 5;
     }
-    const domainPart = (whois.domain || '').toLowerCase();
+    const domainPart = (whois.domain || url || '').toLowerCase();
     if (HIGH_RISK_TLDS.some(tld => domainPart.endsWith(tld))) {
       score += 10;
     }
+    // Check anonymous bulletproof hosting nameservers
+    const ns = (whois.nameservers || []).map(n => String(n).toLowerCase());
+    if (ns.some(n => n.includes('njalla') || n.includes('floki') || n.includes('bulletproof'))) {
+      score += 25;
+    }
   }
+
+  // Synergistic combo: brand-new domain (< 7 days) + DGA algorithmic pattern
+  try {
+    const parsed = new URL(url.startsWith('http') ? url : `https://${url}`);
+    const hostParts = parsed.hostname.toLowerCase().split('.');
+    const sld = hostParts.length >= 2 ? hostParts[hostParts.length - 2] : parsed.hostname;
+    const vowels = (sld.match(/[aeiou]/g) || []).length;
+    const isDga = vowels === 0 && sld.length >= 5;
+    if (isDga && whois?.domainAge !== null && whois?.domainAge !== undefined && whois.domainAge <= 7) {
+      score = Math.max(score, 92);
+    }
+  } catch {}
 
   return Math.min(score, 100);
 }

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { AlertTriangle, Shield, Upload, Hash } from 'lucide-react';
+import { AlertTriangle, Shield, Upload, Sparkles, X } from 'lucide-react';
 import { useSubmitReport } from '@/hooks/api/useReports';
 import { GlowButton } from '@/components/ui/GlowButton';
 import { toast } from 'sonner';
@@ -8,11 +9,38 @@ import { toast } from 'sonner';
 const reportTypes = ['Phishing Link', 'Malicious Email', 'Fake Website', 'Other'];
 
 export default function ThreatHunter() {
-  const [type, setType] = useState(reportTypes[0]);
-  const [url, setUrl] = useState('');
-  const [description, setDescription] = useState('');
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+
+  const stateData = location.state as {
+    url?: string;
+    type?: string;
+    description?: string;
+    riskScore?: number;
+    verdict?: string;
+    source?: string;
+  } | null;
+
+  const [type, setType] = useState(stateData?.type || searchParams.get('type') || reportTypes[0]);
+  const [url, setUrl] = useState(stateData?.url || searchParams.get('url') || '');
+  const [description, setDescription] = useState(stateData?.description || searchParams.get('description') || '');
   const [evidence, setEvidence] = useState<File | null>(null);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
+  const [autoFilled, setAutoFilled] = useState<boolean>(!!(stateData?.url || searchParams.get('url')));
+
+  useEffect(() => {
+    if (stateData?.url) {
+      setUrl(stateData.url);
+      if (stateData.type && reportTypes.includes(stateData.type)) {
+        setType(stateData.type);
+      }
+      if (stateData.description) {
+        setDescription(stateData.description);
+      }
+      setAutoFilled(true);
+      toast.info('Threat details auto-filled from recent scan findings.');
+    }
+  }, [location.state]);
 
   const submitReport = useSubmitReport();
 
@@ -37,6 +65,7 @@ export default function ThreatHunter() {
         setUrl('');
         setDescription('');
         setEvidence(null);
+        setAutoFilled(false);
       },
       onError: () => {
         toast.error('Failed to submit report. Please try again.');
@@ -63,9 +92,38 @@ export default function ThreatHunter() {
   return (
     <div className="max-w-lg mx-auto">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-8">
-        <h2 className="font-display text-xl font-bold text-foreground flex items-center gap-2 mb-6">
+        <h2 className="font-display text-xl font-bold text-foreground flex items-center gap-2 mb-4">
           <AlertTriangle className="w-5 h-5 text-warning" /> Submit a Threat
         </h2>
+
+        {/* Auto-filled Notification Banner */}
+        {autoFilled && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className="mb-5 p-3 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-between text-xs text-primary backdrop-blur-sm"
+          >
+            <div className="flex items-center gap-2 overflow-hidden">
+              <Sparkles className="w-4 h-4 shrink-0 text-primary animate-pulse" />
+              <span className="truncate">
+                Auto-filled from <strong>{stateData?.source || 'Scan Results'}</strong> ({stateData?.verdict?.toUpperCase() || 'DETECTION'}, Risk: {stateData?.riskScore ?? 99}%)
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setUrl('');
+                setDescription('');
+                setType(reportTypes[0]);
+                setAutoFilled(false);
+              }}
+              className="text-muted-foreground hover:text-foreground p-1 transition-colors ml-2"
+              title="Clear pre-filled values"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </motion.div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="text-xs text-muted-foreground block mb-2">What are you reporting?</label>

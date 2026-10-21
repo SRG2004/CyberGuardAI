@@ -1,9 +1,13 @@
 import logger from '../utils/logger.js';
 import Blocklist from '../models/Blocklist.js';
+import { lookup as lookupWhois } from './whois.service.js';
 
-// In-memory sets for O(1) microsecond lookup
+// In-memory sets and maps for O(1) microsecond lookup
 const threatUrls = new Set();
 const threatDomains = new Set();
+const threatSourceMap = new Map();
+const threatDomainSourceMap = new Map();
+
 let lastSyncTimestamp = 0;
 const SYNC_INTERVAL_MS = 20 * 60 * 1000; // 20 minutes
 
@@ -43,19 +47,22 @@ function normalizeVariations(rawUrl) {
     } catch {
       // Ignore URI decode errors
     }
-  } catch (err) {
+  } catch {
     // Ignore
   }
   return Array.from(variations);
 }
 
 /**
- * Helper to add URL variations to threatUrls set
+ * Helper to add URL variations to threat database with source attribution
  */
-function addUrlToThreatSet(rawUrl) {
+function addUrlToThreatSet(rawUrl, source = 'Threat Intelligence') {
   const vars = normalizeVariations(rawUrl);
   for (const v of vars) {
     threatUrls.add(v);
+    if (!threatSourceMap.has(v)) {
+      threatSourceMap.set(v, source);
+    }
   }
   try {
     let clean = rawUrl.trim();
@@ -64,24 +71,29 @@ function addUrlToThreatSet(rawUrl) {
     }
     const parsed = new URL(clean);
     if (parsed.hostname) {
-      threatDomains.add(parsed.hostname.toLowerCase());
+      const host = parsed.hostname.toLowerCase();
+      threatDomains.add(host);
+      if (!threatDomainSourceMap.has(host)) {
+        threatDomainSourceMap.set(host, source);
+      }
     }
   } catch {}
 }
 
 /**
- * Fetches and ingests active threat feeds from URLhaus and OpenPhish
+ * Fetches and ingests active threat feeds from URLhaus, OpenPhish, PhishTank, and BlocklistProject
  */
 export async function syncThreatFeeds(force = false) {
   const now = Date.now();
   if (!force && lastSyncTimestamp && now - lastSyncTimestamp < SYNC_INTERVAL_MS) {
-    return { cached: true, count: threatUrls.size };
+    return { cached: true, count: threatUrls.size, domains: threatDomains.size };
   }
 
-  logger.info('[ThreatIntel] Synchronizing malicious site databases (URLhaus + OpenPhish)...');
-  let urlhausRecentCount = 0;
-  let urlhausOnlineCount = 0;
+  logger.info('[ThreatIntel] Synchronizing global threat intelligence feeds...');
+  let urlhausCount = 0;
   let openphishCount = 0;
+  let phishtankCount = 0;
+  let blocklistProjectCount = 0;
 
   // 1. Ingest URLhaus recent malware URLs (abuse.ch)
   try {
@@ -94,11 +106,11 @@ export async function syncThreatFeeds(force = false) {
       for (const line of lines) {
         const trimmed = line.trim();
         if (trimmed && !trimmed.startsWith('#')) {
-          addUrlToThreatSet(trimmed);
-          urlhausRecentCount++;
+          addUrlToThreatSet(trimmed, 'URLhaus (abuse.ch)');
+          urlhausCount++;
         }
       }
-      logger.info(`[ThreatIntel] Loaded ${urlhausRecentCount} recent malware URLs from URLhaus.`);
+      logger.info(`[ThreatIntel] Loaded ${urlhausCount} recent malware URLs from URLhaus.`);
     }
   } catch (err) {
     logger.warn(`[ThreatIntel] URLhaus text_recent sync warning: ${err.message}`);
@@ -115,11 +127,9 @@ export async function syncThreatFeeds(force = false) {
       for (const line of lines) {
         const trimmed = line.trim();
         if (trimmed && !trimmed.startsWith('#')) {
-          addUrlToThreatSet(trimmed);
-          urlhausOnlineCount++;
+          addUrlToThreatSet(trimmed, 'URLhaus Online (abuse.ch)');
         }
       }
-      logger.info(`[ThreatIntel] Loaded ${urlhausOnlineCount} online malware URLs from URLhaus.`);
     }
   } catch (err) {
     logger.warn(`[ThreatIntel] URLhaus text_online sync warning: ${err.message}`);
@@ -136,7 +146,7 @@ export async function syncThreatFeeds(force = false) {
       for (const line of lines) {
         const trimmed = line.trim();
         if (trimmed && !trimmed.startsWith('#')) {
-          addUrlToThreatSet(trimmed);
+          addUrlToThreatSet(trimmed, 'OpenPhish');
           openphishCount++;
         }
       }
@@ -146,9 +156,65 @@ export async function syncThreatFeeds(force = false) {
     logger.warn(`[ThreatIntel] OpenPhish sync warning: ${err.message}`);
   }
 
+  // 4. Ingest PhishTank active verified phishing feed
+  try {
+    const res = await fetch('http://data.phishtank.com/data/online-valid.csv', {
+      headers: { 'User-Agent': 'phishtank/CyberGuardAI' },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (res.ok) {
+      const text = await res.text();
+      if (!text.includes('exceeded the request rate limit') && text.includes('phish_id')) {
+        const lines = text.split('\n');
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+          const firstComma = line.indexOf(',');
+          const secondComma = line.indexOf(',', firstComma + 1);
+          if (firstComma !== -1 && secondComma !== -1) {
+            const pUrl = line.substring(firstComma + 1, secondComma).replace(/^"|"$/g, '');
+            if (pUrl && pUrl.startsWith('http')) {
+              addUrlToThreatSet(pUrl, 'PhishTank');
+              phishtankCount++;
+            }
+          }
+        }
+        logger.info(`[ThreatIntel] Loaded ${phishtankCount} verified phishing URLs from PhishTank.`);
+      }
+    }
+  } catch (err) {
+    logger.warn(`[ThreatIntel] PhishTank sync warning: ${err.message}`);
+  }
+
+  // 5. Ingest BlocklistProject verified phishing domains
+  try {
+    const res = await fetch('https://blocklistproject.github.io/Lists/phishing.txt', {
+      signal: AbortSignal.timeout(12000),
+    });
+    if (res.ok) {
+      const text = await res.text();
+      const lines = text.split('\n');
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed && !trimmed.startsWith('#')) {
+          const parts = trimmed.split(/\s+/);
+          const domain = (parts[1] || parts[0] || '').toLowerCase().trim();
+          if (domain && domain !== '0.0.0.0' && domain.includes('.')) {
+            threatDomains.add(domain);
+            threatDomainSourceMap.set(domain, 'BlocklistProject Phishing');
+            blocklistProjectCount++;
+          }
+        }
+      }
+      logger.info(`[ThreatIntel] Loaded ${blocklistProjectCount} verified phishing domains from BlocklistProject.`);
+    }
+  } catch (err) {
+    logger.warn(`[ThreatIntel] BlocklistProject sync warning: ${err.message}`);
+  }
+
   lastSyncTimestamp = Date.now();
-  logger.info(`[ThreatIntel] Total active threat database entries indexed: ${threatUrls.size}`);
-  return { cached: false, count: threatUrls.size };
+  logger.info(`[ThreatIntel] Total active threat indicators indexed: ${threatUrls.size} URLs, ${threatDomains.size} domains.`);
+  return { cached: false, count: threatUrls.size, domains: threatDomains.size };
 }
 
 // Initial sync on background load
@@ -162,7 +228,7 @@ setInterval(() => {
 }, SYNC_INTERVAL_MS);
 
 /**
- * Crosschecks a URL against all malicious site databases
+ * Crosschecks a URL against all malicious site databases and zero-day threat heuristics
  */
 export async function checkThreatIntelligence(url) {
   if (!url || typeof url !== 'string') return null;
@@ -176,23 +242,24 @@ export async function checkThreatIntelligence(url) {
 
   const variations = normalizeVariations(url);
 
-  // 1. Direct O(1) in-memory check against URLhaus & OpenPhish database
+  // 1. Direct O(1) in-memory check against URLhaus, PhishTank, and OpenPhish database
   for (const v of variations) {
     if (threatUrls.has(v)) {
-      logger.warn(`[ThreatIntel] Positive hit in URLhaus/OpenPhish database for: ${url}`);
+      const source = threatSourceMap.get(v) || 'URLhaus / PhishTank Global Threat Feed';
+      logger.warn(`[ThreatIntel] Positive hit in threat database (${source}) for: ${url}`);
       return {
         isThreat: true,
-        source: 'URLhaus (abuse.ch)',
-        threatType: 'malware',
+        source,
+        threatType: source.includes('URLhaus') ? 'malware' : 'phishing',
         verdict: 'malicious',
         riskScore: 99,
         confidence: 100,
-        reason: 'URL is actively cataloged in the URLhaus (abuse.ch) global malware distribution database.',
+        reason: `URL is actively cataloged in the ${source} verified malicious site database.`,
       };
     }
   }
 
-  // 2. Extract hostname and check blocklist + domain reputation
+  // 2. Extract hostname and check blocklists, threat domains, and DGA infrastructure
   try {
     let cleanUrl = url.trim();
     if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
@@ -217,20 +284,54 @@ export async function checkThreatIntelligence(url) {
       }
     } catch {}
 
-    // Check if domain itself is completely flagged in threat intelligence
+    // Check if domain itself is in global threat domains (BlocklistProject, URLhaus, PhishTank)
     if (threatDomains.has(hostname)) {
+      const domainSource = threatDomainSourceMap.get(hostname) || 'Global Threat Intelligence Feed';
       return {
         isThreat: true,
-        source: 'Threat Intelligence Grid',
-        threatType: 'malware',
+        source: domainSource,
+        threatType: 'phishing',
         verdict: 'malicious',
-        riskScore: 95,
-        confidence: 95,
-        reason: `Domain (${hostname}) has been identified as a verified malware distribution host.`,
+        riskScore: 96,
+        confidence: 98,
+        reason: `Domain (${hostname}) is actively cataloged as verified malicious infrastructure in ${domainSource}.`,
       };
     }
 
-    // 3. Check abuse.ch URLhaus API if API key is present
+    // 3. Algorithmic Domain Generation (DGA) & Disposable Phishing Infrastructure Detection
+    const hostParts = hostname.split('.');
+    const sld = hostParts.length >= 2 ? hostParts[hostParts.length - 2] : hostname;
+    const vowels = (sld.match(/[aeiou]/g) || []).length;
+    const vowelRatio = vowels / (sld.length || 1);
+    const consecutiveConsonants = (sld.match(/[^aeiou\d]{5,}/g) || []).length;
+    const isDga = (vowels === 0 && sld.length >= 5) || consecutiveConsonants > 0 || (vowelRatio < 0.15 && sld.length >= 7);
+
+    if (isDga) {
+      const whois = await lookupWhois(url);
+      const isBrandNew = whois?.domainAge !== null && whois?.domainAge !== undefined && whois.domainAge <= 30;
+      const isBulletproof = (whois?.nameservers || []).some(ns => {
+        const lower = String(ns).toLowerCase();
+        return lower.includes('njalla') || lower.includes('floki') || lower.includes('bulletproof') || lower.includes('porkbun');
+      });
+
+      if (isBrandNew || isBulletproof || whois?.domainAge === null) {
+        logger.warn(`[ThreatIntel] DGA Phishing Infrastructure match: ${url} (sld=${sld}, age=${whois?.domainAge}d)`);
+        const ageMsg = whois?.domainAge !== null && whois?.domainAge !== undefined
+          ? whois.domainAge === 0 ? 'registered today (< 24 hours ago)' : `registered ${whois.domainAge} days ago`
+          : 'freshly registered';
+        return {
+          isThreat: true,
+          source: 'DGA Threat Intelligence Engine',
+          threatType: 'phishing',
+          verdict: 'malicious',
+          riskScore: 98,
+          confidence: 96,
+          reason: `Algorithmic Domain Generation (DGA) zero-vowel signature detected on domain (${hostname}) ${ageMsg}${isBulletproof ? ' via anonymous bulletproof proxy nameservers' : ''}.`,
+        };
+      }
+    }
+
+    // 4. Check abuse.ch URLhaus API if API key is present
     const authKey = process.env.URLHAUS_AUTH_KEY || '';
     if (authKey) {
       try {
@@ -260,7 +361,7 @@ export async function checkThreatIntelligence(url) {
       } catch {}
     }
 
-    // 4. Heuristic Payload Delivery Pattern:
+    // 5. Heuristic Payload Delivery Pattern:
     // Malicious payload archive (.zip/.exe/.iso/.scr/.bat) directly hosted on public code repos (GitHub/Discord/Pastebin)
     const pathname = parsed.pathname.toLowerCase();
     const isCodeRepoOrPublicCdn =
@@ -277,7 +378,6 @@ export async function checkThreatIntelligence(url) {
       pathname.endsWith('.bat');
 
     if (isCodeRepoOrPublicCdn && isDangerousArchive) {
-      // Check if URL has raw binary execution structure
       if (pathname.includes('/raw/') || pathname.includes('/attachments/') || pathname.includes('/releases/download/')) {
         return {
           isThreat: true,
@@ -296,3 +396,4 @@ export async function checkThreatIntelligence(url) {
 
   return null;
 }
+
