@@ -15,10 +15,18 @@ import logger from '../utils/logger.js';
 const router = Router();
 
 router.post('/url', optionalAuth, scanUserRateLimit, scanUrlValidation, async (req, res) => {
-  const { url } = req.body;
-  const userId = req.userId || null;
-  const result = await scanUrl(url, userId);
-  res.json({ success: true, data: result });
+  try {
+    const { url } = req.body;
+    const userId = req.userId || null;
+    const result = await scanUrl(url, userId);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    logger.error('[scan:url] Scan error:', error);
+    res.status(500).json({
+      success: false,
+      error: { code: 'SCAN_FAILED', message: error.message || 'Scan execution failed' }
+    });
+  }
 });
 
 router.post('/email', optionalAuth, scanUserRateLimit, scanEmailValidation, async (req, res) => {
